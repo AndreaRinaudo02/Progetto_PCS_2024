@@ -11,16 +11,16 @@ namespace DFN_Library
 
 {
 
-bool ImportDFN(const string& file_path, DFN& dfn)
+bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR3_data.txt", dfn))
+    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
     {
         return false;
     }
     return true;
 }
 
-bool ImportFractures(const string &file_name, DFN& dfn)
+bool ImportFractures(const string &file_name, DFN& dfn, Piano &Plane)
 
 {
     ifstream file;
@@ -46,6 +46,7 @@ bool ImportFractures(const string &file_name, DFN& dfn)
 
     dfn.FractureCoordinates.resize(m);     //riscala i vettori
     dfn.FractureId.resize(m);
+    Plane.PlaneId.resize(m);
 
     getline(file, riga);       //scarta riga
 
@@ -57,8 +58,9 @@ bool ImportFractures(const string &file_name, DFN& dfn)
         stringstream ss(riga);
 
         ss >> n >> ch;                     //legge Id frattura, scarta ";"
-        dfn.FractureId[i] = n;             //aggiunge Id all'elenco
+        dfn.FractureId[i] = n;            //aggiunge Id all'elenco
         dfn.FracturesVertices[n] = {};     //aggiunge Id come chiave della mappa
+        Plane.PlaneId[i]=n;
 
         ss >> n;      //numero di vertici della frattura
 
@@ -83,9 +85,25 @@ bool ImportFractures(const string &file_name, DFN& dfn)
 
     }
 
+
     file.close();     //chiude il file
 
     return true;
 }
 
+double* ParametriPiano(vector<array<double,3>> parametri, Piano& plane)
+{
+    double a, b, c, d;
+    double* array = new double[4];
+    a = ((parametri[1][1]-parametri[0][1])*(parametri[1][2]-parametri[0][2])) - ((parametri[2][1]-parametri[0][1])*(parametri[2][2]-parametri[0][2]));
+    b = ((parametri[1][0]-parametri[0][0])*(parametri[2][2]-parametri[0][2])) - ((parametri[1][2]-parametri[0][2])*(parametri[2][0]-parametri[0][0]));
+    c = ((parametri[1][0]-parametri[0][0])*(parametri[2][1]-parametri[0][1])) - ((parametri[1][1]-parametri[0][1])*(parametri[2][0]-parametri[0][0]));
+    d= -(a*parametri[0][0] + b*parametri[0][1] + c*parametri[0][2]);
+    array[0]=a;
+    array[1]=b;
+    array[2]=c;
+    array[3]=d;
+    return array;
+
+}
 }
