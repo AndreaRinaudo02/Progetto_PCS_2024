@@ -10,12 +10,13 @@ using namespace DFN_Library;
 int main()
 {
     DFN dfn;     //crea l'oggetto "dfn" che conterrà tutte le informazioni sul DFN
+    Piano piano;
 
 
     string file_path = "DFN";      //indica la cartella contenente i file con i dati sui DFN
 
 
-    if(!ImportDFN(file_path, dfn))
+    if(!ImportDFN(file_path, dfn, piano))
     {
 
         return 2;

@@ -26,4 +26,11 @@ struct DFN
     map<unsigned int, array<unsigned int, 2>> TracesFractures = {};        //mappa Id-Id fratture generanti
 };
 
+struct Piano
+{
+    double a, b, c, d; // piano ax+by+cz+d=0
+    vector<unsigned int> PlaneId={};
+    map<unsigned int, array<double, 4>> Plane = {};
+};
+
 }
