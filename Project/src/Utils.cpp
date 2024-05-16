@@ -83,6 +83,9 @@ bool ImportFractures(const string &file_name, DFN& dfn, Piano &Plane)
 
         dfn.FracturesVertices[dfn.FractureId[i]] = dfn.FractureCoordinates[i];    //chiave: Id, valore: vettore di array con le coordinate del vertice
 
+        array<double,4> Coefficienti_piano = {};
+        ParametriPiano(dfn.FractureCoordinates[i], Coefficienti_piano);           //calcola i coefficienti del piano contenente la frattura
+        Plane.Plane[dfn.FractureId[i]] = Coefficienti_piano;                      //chiave: Id, valore: array (dimensione 4) con i parametri del piano in ordine (a, b, c, d)
     }
 
 
@@ -91,19 +94,20 @@ bool ImportFractures(const string &file_name, DFN& dfn, Piano &Plane)
     return true;
 }
 
-double* ParametriPiano(vector<array<double,3>> parametri, Piano& plane)
+void ParametriPiano(vector<array<double,3>> parametri, array<double, 4>& Coefficienti_piano)
 {
     double a, b, c, d;
-    double* array = new double[4];
-    a = ((parametri[1][1]-parametri[0][1])*(parametri[1][2]-parametri[0][2])) - ((parametri[2][1]-parametri[0][1])*(parametri[2][2]-parametri[0][2]));
-    b = ((parametri[1][0]-parametri[0][0])*(parametri[2][2]-parametri[0][2])) - ((parametri[1][2]-parametri[0][2])*(parametri[2][0]-parametri[0][0]));
-    c = ((parametri[1][0]-parametri[0][0])*(parametri[2][1]-parametri[0][1])) - ((parametri[1][1]-parametri[0][1])*(parametri[2][0]-parametri[0][0]));
-    d= -(a*parametri[0][0] + b*parametri[0][1] + c*parametri[0][2]);
-    array[0]=a;
-    array[1]=b;
-    array[2]=c;
-    array[3]=d;
-    return array;
 
+    a = ((parametri[1][1] - parametri[0][1]) * (parametri[1][2] - parametri[0][2])) - ((parametri[2][1] - parametri[0][1]) * (parametri[2][2] - parametri[0][2]));
+    b = ((parametri[1][0] - parametri[0][0]) * (parametri[2][2] - parametri[0][2])) - ((parametri[1][2] - parametri[0][2]) * (parametri[2][0] - parametri[0][0]));
+    c = ((parametri[1][0] - parametri[0][0]) * (parametri[2][1] - parametri[0][1])) - ((parametri[1][1] - parametri[0][1]) * (parametri[2][0] - parametri[0][0]));
+    d= -(a * parametri[0][0] + b * parametri[0][1] + c * parametri[0][2]);
+
+    Coefficienti_piano[0] = a;
+    Coefficienti_piano[1] = b;
+    Coefficienti_piano[2] = c;
+    Coefficienti_piano[3] = d;
 }
+
+
 }

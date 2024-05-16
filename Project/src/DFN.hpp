@@ -28,9 +28,8 @@ struct DFN
 
 struct Piano
 {
-    double a, b, c, d; // piano ax+by+cz+d=0
-    vector<unsigned int> PlaneId={};
-    map<unsigned int, array<double, 4>> Plane = {};
+    vector<unsigned int> PlaneId={};                                       //memorizza gli Id dei piani (coincidono con quelli delle fratture)
+    map<unsigned int, array<double, 4>> Plane = {};                        //mappa Id-coefficienti del piano
 };
 
 }

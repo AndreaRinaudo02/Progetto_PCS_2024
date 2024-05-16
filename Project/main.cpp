@@ -9,8 +9,8 @@ using namespace DFN_Library;
 
 int main()
 {
-    DFN dfn;     //crea l'oggetto "dfn" che conterrà tutte le informazioni sul DFN
-    Piano piano;
+    DFN dfn;            //crea l'oggetto "dfn" che conterrà tutte le informazioni sul DFN
+    Piano piano;        //crea l'oggetto "piano" che conterrà le informazioni utili a calcolare le fratture
 
 
     string file_path = "DFN";      //indica la cartella contenente i file con i dati sui DFN
