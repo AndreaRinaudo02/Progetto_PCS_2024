@@ -13,4 +13,9 @@ bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane);
 bool ImportFractures(const string& file_name, DFN& dfn, Piano& Plane);
 
 void ParametriPiano(vector<array<double,3>> parametri, array<double, 4>& Coefficienti_piano);
+
+void Calcola_tracce(DFN& dfn, Piano& Plane);
+
+void Fratture_vicine(DFN& dfn, vector<array<unsigned int, 2>>& coppie_vicine);
+
 }
