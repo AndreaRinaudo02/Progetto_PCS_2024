@@ -18,4 +18,6 @@ void Calcola_tracce(DFN& dfn, Piano& Plane);
 
 void Fratture_vicine(DFN& dfn, vector<array<unsigned int, 2>>& coppie_vicine);
 
+void Crea_bolle(DFN& dfn, vector<array<double , 4>>& bolle);
+
 }

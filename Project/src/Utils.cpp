@@ -15,7 +15,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR82_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -125,110 +125,90 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
     */
 
     //1
-    vector<array<unsigned int, 2>> coppie_vicine = {};
+    vector<array<unsigned int, 2>> coppie_vicine = {};      //verranno memorizzate coppie di Id di fratture vicine per risparmiare tempo durante il calcolo delle tracce
     Fratture_vicine(dfn, coppie_vicine);
 
-    for (int i = 0; i < coppie_vicine.size(); i++)
+    /*
+    for (unsigned int i = 0; i < coppie_vicine.size(); i++)
     {
         cout << "coppie: " << coppie_vicine[i][0]<< " " <<coppie_vicine[i][1] << endl;
     }
+    */
+
 }
 
 void Fratture_vicine(DFN& dfn, vector<array<unsigned int, 2>>& coppie_vicine)
 {
-    for(unsigned int i = 0; i < dfn.NumberFractures - 1; i++)
+    vector<array<double , 4>> bolle = {};     //contiene i dati riguardanti le bolle intorno alle fratture
+    bolle.resize(dfn.NumberFractures);
+    Crea_bolle(dfn, bolle);
+    double x,y,z;
+
+    for(unsigned int a = 0; a < dfn.NumberFractures - 1; a++)
     {
-        vector<array<double, 3>> coordinate_1 = dfn.FracturesVertices[i];
-        array<double, 3> centro_1 = {};
-
-        double x = 0;
-        double y = 0;
-        double z = 0;
-        for(int a = 0; a < coordinate_1.size(); a++)
+        for(unsigned int b = a + 1; b < dfn.NumberFractures; b++)
         {
+            x = bolle[a][0] - bolle[b][0];
+            y = bolle[a][1] - bolle[b][1];
+            z = bolle[a][2] - bolle[b][2];
 
-            x += coordinate_1[a][0];
-            y += coordinate_1[a][1];
-            z += coordinate_1[a][2];
-        }
+            double distanza = abs(x) + abs(y) + abs(z);     //calcola la distanza tra i centri di due bolle (in norma 1)
 
-        centro_1[0] = x/coordinate_1.size();
-        centro_1[1] = y/coordinate_1.size();
-        centro_1[2] = z/coordinate_1.size();
-
-        vector<double> distanze = {};
-
-        for(int c = 0; c < coordinate_1.size(); c++)
-        {
-            x = centro_1[0] - coordinate_1[c][0];
-            y = centro_1[1] - coordinate_1[c][1];
-            z = centro_1[2] - coordinate_1[c][2];
-            x = pow(x,2);
-            y = pow(y,2);
-            z = pow(z,2);
-
-            distanze.push_back(x/4 + y/4 + z/4);  //approssima la radice quadrata
-        }
-
-        double distanza_1 = *(max_element(distanze.begin(), distanze.end()));
-
-        for(unsigned int j = i+1; j < dfn.NumberFractures; j++)
-        {
-
-            distanze.clear();
-            vector<array<double, 3>> coordinate_2 = dfn.FracturesVertices[j];
-            array<double, 3> centro_2 = {};
-
-
-            x = 0;
-            y = 0;
-            z = 0;
-
-            for(int b = 0; b < coordinate_2.size(); b++)
+            if(distanza < bolle[a][3] + bolle[b][3])        //una coppia viene considerata vicina se i due centri distano meno rispetto alla somma dei raggi delle due bolle in esse contenuti
             {
-
-                x += coordinate_2[b][0];
-                y += coordinate_2[b][1];
-                z += coordinate_2[b][2];
-            }
-
-            centro_2[0] = x/coordinate_2.size();
-            centro_2[1] = y/coordinate_2.size();
-            centro_2[2] = z/coordinate_2.size();
-
-
-
-            for(int d = 0; d < coordinate_2.size(); d++)
-            {
-                x = centro_2[0] - coordinate_2[d][0];
-                y = centro_2[1] - coordinate_2[d][1];
-                z = centro_2[2] - coordinate_2[d][2];
-                x = pow(x,2);
-                y = pow(y,2);
-                z = pow(z,2);
-
-                distanze.push_back(x/4 + y/4 + z/4);  //approssima la radice quadrata
-            }
-
-            double distanza_2 = *(max_element(distanze.begin(), distanze.end()));
-
-            x = centro_1[0] - centro_2[0];
-            y = centro_1[1] - centro_2[1];
-            z = centro_1[2] - centro_2[2];
-            x = pow(x,2);
-            y = pow(y,2);
-            z = pow(z,2);
-
-            double distanza_centri = x/4 + y/4 + z/4;  //approssima la radice quadrata
-            cout << i << " " << j <<"     "<< distanza_1 << " " << distanza_2 << " " << distanza_centri << endl;
-
-            if (distanza_centri <= distanza_1 + distanza_2 + 1)  //bilancia la sottostima della norma al quadrato
-            {
-                array<unsigned int, 2> coppia = {i,j};
+                array<unsigned int, 2> coppia = {a,b};
                 coppie_vicine.push_back(coppia);
             }
         }
     }
 }
+
+void Crea_bolle(DFN& dfn, vector<array<double, 4>>& bolle)
+{
+    double x;
+    double y;
+    double z;
+
+    for(unsigned int i = 0; i < dfn.NumberFractures; i++)
+    {
+        array<double, 4> bolla = {};        //contiene i dati della bolla (coordinate del cenntro (x, y, z) e il raggio)
+
+        vector<array<double, 3>> coordinate = dfn.FracturesVertices[i];
+
+        x = 0;
+        y = 0;
+        z = 0;
+
+        for(unsigned int k =0; k < coordinate.size(); k++)
+        {
+            x += coordinate[k][0];
+            y += coordinate[k][1];
+            z += coordinate[k][2];
+        }
+
+        bolla[0] = x/coordinate.size();    //calcola il centro della bolla facendo la media delle coordinate dei vertici
+        bolla[1] = y/coordinate.size();
+        bolla[2] = z/coordinate.size();
+
+        vector<double> distanze = {};
+
+        for(unsigned int j = 0; j < coordinate.size(); j++)
+        {
+            x = bolla[0] - coordinate[j][0];
+            y = bolla[1] - coordinate[j][1];
+            z = bolla[2] - coordinate[j][2];
+
+            double distanza = abs(x) + abs(y) + abs(z);   //calcola la distanza dal centro di ogni verice (calcolandola in norma 1)
+            distanze.push_back(distanza);
+        }
+
+        double raggio = *max_element(distanze.begin(), distanze.end());   //il raggio della bolla è pari alla distanza tra il vertice più lontano dal centro e il centro
+
+        bolla[3] = raggio;
+
+        bolle[i] = bolla;
+    }
+}
+
 
 }
