@@ -22,5 +22,9 @@ void Crea_bolle(DFN& dfn, vector<array<double , 4>>& bolle);
 
 bool StampaTracce(const string& file_name, DFN& dfn);
 
-void RettaIntersezione(Piano &Plane, vector<array<unsigned int, 2>>& coppie_vicine, map<array<unsigned int, 2>, array<array<double, 3>, 2>>& Retta);
+void RettaIntersezione(Piano &Plane,
+                       vector<array<unsigned int, 2>>& coppie_vicine,
+                       map<array<unsigned int, 2>,
+                       array<array<double, 3>, 2>>& Retta);
+
 }

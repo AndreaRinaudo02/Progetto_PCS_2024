@@ -127,7 +127,7 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
     */
 
     //1
-    vector<array<unsigned int, 2>> coppie_vicine = {};      //verranno memorizzate coppie di Id di fratture vicine per risparmiare tempo durante il calcolo delle tracce
+    vector<array<unsigned int, 2>> coppie_vicine = {}; //verranno memorizzate coppie di Id di fratture vicine per risparmiare tempo durante il calcolo delle tracce
     Fratture_vicine(dfn, coppie_vicine);
 
     //2
@@ -135,13 +135,14 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
     map<array<unsigned int, 2>, array<array<double, 3>, 2>> Retta={};
     RettaIntersezione(piano, coppie_vicine, Retta);
 
-    cout << piano.Plane[coppie_vicine[0][1]][0]<< " "<< piano.Plane[coppie_vicine[0][1]][1]<< " "<< piano.Plane[coppie_vicine[0][1]][2]<< " "<< piano.Plane[coppie_vicine[0][1]][3]<< endl;
-    cout << Retta[coppie_vicine[0]][0][0] << " " << Retta[coppie_vicine[0]][0][1] << " "<<  Retta[coppie_vicine[0]][0][2]<< endl;
-    cout << Retta[coppie_vicine[0]][1][0] << " " << Retta[coppie_vicine[0]][1][1] << " "<<  Retta[coppie_vicine[0]][1][2]<< endl;
 
 
 
     /*
+    cout << piano.Plane[coppie_vicine[0][1]][0]<< " "<< piano.Plane[coppie_vicine[0][1]][1]<< " "<< piano.Plane[coppie_vicine[0][1]][2]<< " "<< piano.Plane[coppie_vicine[0][1]][3]<< endl;
+    cout << Retta[coppie_vicine[0]][0][0] << " " << Retta[coppie_vicine[0]][0][1] << " "<<  Retta[coppie_vicine[0]][0][2]<< endl;
+    cout << Retta[coppie_vicine[0]][1][0] << " " << Retta[coppie_vicine[0]][1][1] << " "<<  Retta[coppie_vicine[0]][1][2]<< endl;
+
     for (unsigned int i = 0; i < coppie_vicine.size(); i++)
     {
         cout << "coppie: " << coppie_vicine[i][0]<< " " <<coppie_vicine[i][1] << endl;
@@ -252,9 +253,36 @@ bool StampaTracce(const string& file_name, DFN& dfn)
     return true;
 }
 
+/*
+bool TracceTips(const string& file_name, DFN& dfn)
+{
+    ofstream file;
+    file.open(file_name);     //apre il file
 
-void RettaIntersezione(Piano &plane, vector<array<unsigned int, 2>>& coppie_vicine, map<array<unsigned int, 2>,
-                                                                                         array<array<double, 3>, 2>>& Retta)
+    if(!file.is_open())
+    {
+        cerr << "Error: Unable to open file " << file_name << endl;
+        return false;
+    }
+
+    file << "# FractureId; NumTraces" << endl;
+    file << " " << FractureTips << " " <<dfn.NumberTipsTraces << endl;
+    file << # TraceId; Tips; Length << endl;
+    for (unsigned int i:NumberTipsTraces)
+    {
+        file << TraceTips[i] << " " << Tips[i] << " " << LenghtTips[i] << endl;
+    }
+
+    file.close();
+
+    return true;
+}
+*/
+
+void RettaIntersezione(Piano &plane,
+                       vector<array<unsigned int, 2>>& coppie_vicine,
+                       map<array<unsigned int, 2>,
+                       array<array<double, 3>, 2>>& Retta)
 {
     array<double, 3> V={};
     array<double, 3> P={};
@@ -265,23 +293,26 @@ void RettaIntersezione(Piano &plane, vector<array<unsigned int, 2>>& coppie_vici
         V[1]= plane.Plane[coppia[1]][0]*plane.Plane[coppia[0]][2] - plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][2];
         V[2]= plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][1] - plane.Plane[coppia[0]][1]*plane.Plane[coppia[1]][0];
 
-        Matrix3d C;
-        C << plane.Plane[coppia[0]][0], plane.Plane[coppia[0]][1], plane.Plane[coppia[0]][2],
-        plane.Plane[coppia[1]][0], plane.Plane[coppia[1]][1], plane.Plane[coppia[1]][02],
-        V[0], V[1], V[2];
+        if (V[0]!=0 || V[1]!=0 || V[2]!=0)
+        {
+            Matrix3d C;
+            C << plane.Plane[coppia[0]][0], plane.Plane[coppia[0]][1], plane.Plane[coppia[0]][2],
+                plane.Plane[coppia[1]][0], plane.Plane[coppia[1]][1], plane.Plane[coppia[1]][02],
+                V[0], V[1], V[2];
 
-        Vector3d B;
-        B << -plane.Plane[coppia[0]][3], -plane.Plane[coppia[1]][3], 0;
+            Vector3d B;
+            B << -plane.Plane[coppia[0]][3], -plane.Plane[coppia[1]][3], 0;
 
-        Vector3d X = C.colPivHouseholderQr().solve(B);
-        P[0]=X[0];
-        P[1]=X[1];
-        P[2]=X[2];
+            Vector3d X = C.colPivHouseholderQr().solve(B);
+            P[0]=X[0];
+            P[1]=X[1];
+            P[2]=X[2];
 
-        array<array<double,3>,2> PV={P,V};
-        Retta[coppia]=PV;
+
+            array<array<double,3>,2> PV={P,V};
+            Retta[coppia]=PV;
+        }
     }
-
 }
 
 }
