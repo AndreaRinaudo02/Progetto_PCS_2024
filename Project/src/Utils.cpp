@@ -7,15 +7,17 @@
 #include <algorithm>
 #include "Utils.hpp"
 #include "DFN.hpp"
+#include <Eigen/Dense>
 
 using namespace std;
+using namespace Eigen;
 namespace DFN_Library
 
 {
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR82_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -128,6 +130,17 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
     vector<array<unsigned int, 2>> coppie_vicine = {};      //verranno memorizzate coppie di Id di fratture vicine per risparmiare tempo durante il calcolo delle tracce
     Fratture_vicine(dfn, coppie_vicine);
 
+    //2
+
+    map<array<unsigned int, 2>, array<array<double, 3>, 2>> Retta={};
+    RettaIntersezione(piano, coppie_vicine, Retta);
+
+    cout << piano.Plane[coppie_vicine[0][1]][0]<< " "<< piano.Plane[coppie_vicine[0][1]][1]<< " "<< piano.Plane[coppie_vicine[0][1]][2]<< " "<< piano.Plane[coppie_vicine[0][1]][3]<< endl;
+    cout << Retta[coppie_vicine[0]][0][0] << " " << Retta[coppie_vicine[0]][0][1] << " "<<  Retta[coppie_vicine[0]][0][2]<< endl;
+    cout << Retta[coppie_vicine[0]][1][0] << " " << Retta[coppie_vicine[0]][1][1] << " "<<  Retta[coppie_vicine[0]][1][2]<< endl;
+
+
+
     /*
     for (unsigned int i = 0; i < coppie_vicine.size(); i++)
     {
@@ -197,7 +210,6 @@ void Crea_bolle(DFN& dfn, vector<array<double, 4>>& bolle)
             x = bolla[0] - coordinate[j][0];
             y = bolla[1] - coordinate[j][1];
             z = bolla[2] - coordinate[j][2];
-
             double distanza = abs(x) + abs(y) + abs(z);   //calcola la distanza dal centro di ogni verice (calcolandola in norma 1)
             distanze.push_back(distanza);
         }
@@ -208,7 +220,68 @@ void Crea_bolle(DFN& dfn, vector<array<double, 4>>& bolle)
 
         bolle[i] = bolla;
     }
+
+
 }
 
+bool StampaTracce(const string& file_name, DFN& dfn)
+{
+    ofstream file;
+    file.open(file_name);     //apre il file
+
+    if(!file.is_open())
+    {
+        cerr << "Error: Unable to open file " << file_name << endl;
+        return false;
+    }
+
+    file << "# Number of Traces" << endl;
+    file << dfn.NumberTraces << endl;
+    file << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
+    for (unsigned int i : dfn.TracesId)
+    {
+        file << "  " << i << "; " << dfn.TracesFractures[i][0] << "; " << dfn.TracesFractures[i][1]
+        << "; " << dfn.TracesCoordinates[i][0][0] << "; " << dfn.TracesCoordinates[i][0][1] << "; "
+        << dfn.TracesCoordinates[i][0][2] << "; " << dfn.TracesCoordinates[i][1][0] << "; " << dfn.TracesCoordinates[i][1][1]
+        << "; " << dfn.TracesCoordinates[i][1][2] << endl;
+
+    }
+
+    file.close();
+
+    return true;
+}
+
+
+void RettaIntersezione(Piano &plane, vector<array<unsigned int, 2>>& coppie_vicine, map<array<unsigned int, 2>,
+                                                                                         array<array<double, 3>, 2>>& Retta)
+{
+    array<double, 3> V={};
+    array<double, 3> P={};
+
+    for (auto coppia : coppie_vicine)
+    {
+        V[0]= plane.Plane[coppia[0]][1]*plane.Plane[coppia[1]][2] - plane.Plane[coppia[1]][1]*plane.Plane[coppia[0]][2];
+        V[1]= plane.Plane[coppia[1]][0]*plane.Plane[coppia[0]][2] - plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][2];
+        V[2]= plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][1] - plane.Plane[coppia[0]][1]*plane.Plane[coppia[1]][0];
+
+        Matrix3d C;
+        C << plane.Plane[coppia[0]][0], plane.Plane[coppia[0]][1], plane.Plane[coppia[0]][2],
+        plane.Plane[coppia[1]][0], plane.Plane[coppia[1]][1], plane.Plane[coppia[1]][02],
+        V[0], V[1], V[2];
+
+        Vector3d B;
+        B << -plane.Plane[coppia[0]][3], -plane.Plane[coppia[1]][3], 0;
+
+        Vector3d X = C.colPivHouseholderQr().solve(B);
+        P[0]=X[0];
+        P[1]=X[1];
+        P[2]=X[2];
+
+        array<array<double,3>,2> PV={P,V};
+        Retta[coppia]=PV;
+    }
+
+}
 
 }
