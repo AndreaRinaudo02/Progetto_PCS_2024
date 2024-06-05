@@ -130,12 +130,14 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
     vector<array<unsigned int, 2>> coppie_vicine = {}; //verranno memorizzate coppie di Id di fratture vicine per risparmiare tempo durante il calcolo delle tracce
     Fratture_vicine(dfn, coppie_vicine);
 
-    //2
+    //2 - 3
 
     map<array<unsigned int, 2>, array<array<double, 3>, 2>> Retta={};
     RettaIntersezione(piano, coppie_vicine, Retta);
 
-
+    //4 - 5
+    map<unsigned int, array<array<double, 3>, 2>> intersezioni = {};
+    IntersezioneLati(Retta, dfn, intersezioni);
 
 
     /*
@@ -281,8 +283,7 @@ bool TracceTips(const string& file_name, DFN& dfn)
 
 void RettaIntersezione(Piano &plane,
                        vector<array<unsigned int, 2>>& coppie_vicine,
-                       map<array<unsigned int, 2>,
-                       array<array<double, 3>, 2>>& Retta)
+                       map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta)
 {
     array<double, 3> V={};
     array<double, 3> P={};
@@ -311,6 +312,46 @@ void RettaIntersezione(Piano &plane,
 
             array<array<double,3>,2> PV={P,V};
             Retta[coppia]=PV;
+        }
+    }
+}
+
+void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn,
+                      map<unsigned int, array<array<double, 3>, 2>>& intersezioni)
+{
+    for(const auto& pair : Retta)
+    {
+        for(int i = 0; i<2; i++)
+        {
+            unsigned int Id = pair.first[i];
+            for (unsigned int j=0; j < dfn.FractureCoordinates.size()-1; j++)
+            {
+                array<array<double, 3>, 2> lato = {dfn.FractureCoordinates[Id][j], dfn.FractureCoordinates[Id][j+1]};
+
+                array<double, 3> retta1 = {lato[0][0]-pair.second[0][0], lato[0][1]-pair.second[0][1], lato[0][2]-pair.second[0][2]};
+                array<double, 3> retta2 = {lato[1][0]-pair.second[0][0], lato[1][1]-pair.second[0][1], lato[1][2]-pair.second[0][2]};
+
+                array<double, 3> prod_vett1 = {retta1[1]*pair.second[1][2]-retta1[2]*pair.second[1][1], retta1[2]*pair.second[1][0]-retta1[0]*pair.second[1][2], retta1[0]*pair.second[1][1]-retta1[1]*pair.second[1][0]};
+                array<double, 3> prod_vett2 = {retta2[1]*pair.second[1][2]-retta2[2]*pair.second[1][1], retta2[2]*pair.second[1][0]-retta2[0]*pair.second[1][2], retta2[0]*pair.second[1][1]-retta2[1]*pair.second[1][0]};
+
+                double prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
+
+                if (prod_scal < 0)
+                {
+                    array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
+
+                    MatrixXd C(3,2);
+                    C << pair.second[1][0], -d[0], pair.second[1][1], -d[1], pair.second[1][2], -d[2];
+
+                    Vector3d B;
+                    B << lato[0][0] - pair.second[0][0], lato[0][1] - pair.second[0][1], lato[0][2] - pair.second[0][2] ;
+
+                    VectorXd X = C.colPivHouseholderQr().solve(B);
+                    double t =X[0];
+                    double s =X[1];
+                    cout << t << " " << s << endl;
+                }
+            }
         }
     }
 }

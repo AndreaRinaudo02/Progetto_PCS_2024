@@ -24,7 +24,9 @@ bool StampaTracce(const string& file_name, DFN& dfn);
 
 void RettaIntersezione(Piano &Plane,
                        vector<array<unsigned int, 2>>& coppie_vicine,
-                       map<array<unsigned int, 2>,
-                       array<array<double, 3>, 2>>& Retta);
+                       map<array<unsigned int, 2>, array<array<double, 3>, 2>>& Retta);
+
+void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn,
+                      map<unsigned int, array<array<double, 3>, 2>>& intersezioni);
 
 }
