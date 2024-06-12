@@ -316,6 +316,7 @@ void RettaIntersezione(Piano &plane,
     }
 }
 
+/*
 void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn,
                       map<unsigned int, array<array<double, 3>, 2>>& intersezioni)
 {
@@ -355,5 +356,5 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
         }
     }
 }
-
+*/
 }
