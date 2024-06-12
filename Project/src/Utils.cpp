@@ -325,10 +325,19 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
         for(int i = 0; i<2; i++)
         {
             unsigned int Id = pair.first[i];
-            for (unsigned int j=0; j < dfn.FractureCoordinates.size()-1; j++)
+            //cout << Id <<endl;
+            for (unsigned int j=0; j < dfn.FractureCoordinates[Id].size(); j++)
             {
-                array<array<double, 3>, 2> lato = {dfn.FractureCoordinates[Id][j], dfn.FractureCoordinates[Id][j+1]};
+                array<array<double, 3>, 2> lato = {};
 
+                if (j == dfn.FractureCoordinates[Id].size()-1)
+                {
+                    lato = {dfn.FractureCoordinates[Id][j], dfn.FractureCoordinates[Id][0]};
+                }
+                else
+                {
+                    lato = {dfn.FractureCoordinates[Id][j], dfn.FractureCoordinates[Id][j+1]};
+                }
                 array<double, 3> retta1 = {lato[0][0]-pair.second[0][0], lato[0][1]-pair.second[0][1], lato[0][2]-pair.second[0][2]};
                 array<double, 3> retta2 = {lato[1][0]-pair.second[0][0], lato[1][1]-pair.second[0][1], lato[1][2]-pair.second[0][2]};
 
@@ -336,9 +345,10 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 array<double, 3> prod_vett2 = {retta2[1]*pair.second[1][2]-retta2[2]*pair.second[1][1], retta2[2]*pair.second[1][0]-retta2[0]*pair.second[1][2], retta2[0]*pair.second[1][1]-retta2[1]*pair.second[1][0]};
 
                 double prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
-
+                //cout << prod_scal << endl;
                 if (prod_scal < 0)
                 {
+                    double t,s;
                     array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
 
                     MatrixXd C(3,2);
@@ -348,9 +358,10 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                     B << lato[0][0] - pair.second[0][0], lato[0][1] - pair.second[0][1], lato[0][2] - pair.second[0][2] ;
 
                     VectorXd X = C.colPivHouseholderQr().solve(B);
-                    double t =X[0];
-                    double s =X[1];
-                    cout << t << " " << s << endl;
+                    t =X[0];
+                    s =X[1];
+                    //cout << t << " " << s << endl;
+
                 }
             }
         }
