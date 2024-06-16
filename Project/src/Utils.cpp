@@ -132,25 +132,14 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
 
     //2 - 3
 
-    map<array<unsigned int, 2>, array<array<double, 3>, 2>> Retta={};
+    map<array<unsigned int, 2>, array<array<double, 3>, 2>> Retta={};   //memorizza i dati della retta di interezione in uma mappa coppia-Punto/direttrice
     RettaIntersezione(piano, coppie_vicine, Retta);
 
-    //4 - 5
-    map<unsigned int, array<array<double, 3>, 2>> intersezioni = {};
-    IntersezioneLati(Retta, dfn, intersezioni);
+    //4 - 5 - 6
+    IntersezioneLati(Retta, dfn);        //calcola le tracce
 
-
-    /*
-    cout << piano.Plane[coppie_vicine[0][1]][0]<< " "<< piano.Plane[coppie_vicine[0][1]][1]<< " "<< piano.Plane[coppie_vicine[0][1]][2]<< " "<< piano.Plane[coppie_vicine[0][1]][3]<< endl;
-    cout << Retta[coppie_vicine[0]][0][0] << " " << Retta[coppie_vicine[0]][0][1] << " "<<  Retta[coppie_vicine[0]][0][2]<< endl;
-    cout << Retta[coppie_vicine[0]][1][0] << " " << Retta[coppie_vicine[0]][1][1] << " "<<  Retta[coppie_vicine[0]][1][2]<< endl;
-
-    for (unsigned int i = 0; i < coppie_vicine.size(); i++)
-    {
-        cout << "coppie: " << coppie_vicine[i][0]<< " " <<coppie_vicine[i][1] << endl;
-    }
-    */
-
+    const string file_name = "results.txt";       //stampa su file
+    StampaTracce(file_name, dfn);
 }
 
 void Fratture_vicine(DFN& dfn, vector<array<unsigned int, 2>>& coppie_vicine)
@@ -227,32 +216,94 @@ void Crea_bolle(DFN& dfn, vector<array<double, 4>>& bolle)
 
 }
 
-bool StampaTracce(const string& file_name, DFN& dfn)
+void StampaTracce(const string& file_name, DFN& dfn)
 {
     ofstream file;
     file.open(file_name);     //apre il file
 
-    if(!file.is_open())
+    file << "# Number of Traces" << endl;      //inizio stampa prima parte
+    file <<"   "<< dfn.NumberTraces << endl;
+
+    if(dfn.NumberTraces >0)
     {
-        cerr << "Error: Unable to open file " << file_name << endl;
-        return false;
+        file << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
+
+        for (unsigned int i : dfn.TracesId)      //stampa prima parte
+        {
+            file << "  " << i << "; " << dfn.TracesFractures[i][0] << "; " << dfn.TracesFractures[i][1]
+            << "; " << dfn.TracesVertices[i][0][0] << "; " << dfn.TracesVertices[i][0][1] << "; "
+            << dfn.TracesVertices[i][0][2] << "; " << dfn.TracesVertices[i][1][0] << "; " << dfn.TracesVertices[i][1][1]
+            << "; " << dfn.TracesVertices[i][1][2] << endl;
+        }
+
+        file << endl;
+
+        file << "--------------------------------------------------------" << endl;
+
+        for (unsigned int i : dfn.FractureId)        //inizio stampa seconda parte
+        {
+            file << "# FractureId; NumTraces" << endl;
+            file << "   " << i << "; " << dfn.FractureTraces[i].size() << endl;
+            file << "# TraceId; Tips; Length" << endl;
+
+            vector<unsigned int> tracce = dfn.FractureTraces[i];     //occorre ordinare le tracce e misurarne la lunghezza
+            map<unsigned int, double> lunghezza = {};                //mappa traccia-lunghezza
+
+            for (unsigned int k = 0; k < tracce.size(); k = k+1)
+            {
+                array<array<double, 3>,2> vertici = dfn.TracesVertices[tracce[k]];
+
+                double x = vertici[0][0] - vertici[1][0];
+                double y = vertici[0][1] - vertici[1][1];
+                double z = vertici[0][2] - vertici[1][2];
+
+                double distanza = sqrt(x*x + y*y +z*z);      //calcola la lunghezza in norma 2
+
+                lunghezza[tracce[k]] = distanza;
+
+
+                unsigned int prossimo = tracce[k];           //algoritmo di sorting che ordina le tracce in base a Tips
+                int j = k;
+
+                array<unsigned int, 2> coppia1 = {prossimo,i};
+                array<unsigned int, 2> coppia2 = {tracce[j-1],i};
+
+                while ((j > 0) && dfn.Tips[coppia1] < dfn.Tips[coppia2])
+                {
+                    tracce[j] = tracce[j-1];
+                    j = j-1;
+                    coppia2 = {tracce[j-1], i};
+                }
+                tracce[j] = prossimo;
+            }
+
+            for (unsigned int k = 0; k < tracce.size(); k = k+1)      //algoritmo di sorting che ordina le tracce, a parità di Tips, in base alla lunghezza
+            {
+                unsigned int prossimo = tracce[k];
+                int j = k;
+
+                array<unsigned int, 2> coppia1 = {prossimo,i};
+                array<unsigned int, 2> coppia2 = {tracce[j-1],i};
+
+                while ((j > 0) && lunghezza[tracce[j-1]] < lunghezza[prossimo] && dfn.Tips[coppia1] == dfn.Tips[coppia2])
+                {
+                    tracce[j] = tracce[j-1];
+                    j = j-1;
+                    coppia2 = {tracce[j-1], i};
+                }
+                tracce[j] = prossimo;
+            }
+
+            for(unsigned int Id_traccia : tracce)        //stampa seconda parte
+            {
+                array<unsigned int, 2> coppia = {Id_traccia,i};
+                file << "   " << Id_traccia << "; " << dfn.Tips[coppia] << "; " << lunghezza[Id_traccia] << endl;
+            }
+            file << endl;
+        }
+
+        file.close();
     }
-
-    file << "# Number of Traces" << endl;
-    file << dfn.NumberTraces << endl;
-    file << "# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2" << endl;
-    for (unsigned int i : dfn.TracesId)
-    {
-        file << "  " << i << "; " << dfn.TracesFractures[i][0] << "; " << dfn.TracesFractures[i][1]
-        << "; " << dfn.TracesCoordinates[i][0][0] << "; " << dfn.TracesCoordinates[i][0][1] << "; "
-        << dfn.TracesCoordinates[i][0][2] << "; " << dfn.TracesCoordinates[i][1][0] << "; " << dfn.TracesCoordinates[i][1][1]
-        << "; " << dfn.TracesCoordinates[i][1][2] << endl;
-
-    }
-
-    file.close();
-
-    return true;
 }
 
 /*
@@ -285,17 +336,21 @@ void RettaIntersezione(Piano &plane,
                        vector<array<unsigned int, 2>>& coppie_vicine,
                        map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta)
 {
-    array<double, 3> V={};
-    array<double, 3> P={};
+    array<double, 3> V={};       //memorizza le componenti della direttrice
+    array<double, 3> P={};       //memorizza le componenti di un punto sulla retta
 
     for (auto coppia : coppie_vicine)
     {
+        //la direttrice si trova intersecando i due piani contenenti le fratture
+
         V[0]= plane.Plane[coppia[0]][1]*plane.Plane[coppia[1]][2] - plane.Plane[coppia[1]][1]*plane.Plane[coppia[0]][2];
         V[1]= plane.Plane[coppia[1]][0]*plane.Plane[coppia[0]][2] - plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][2];
         V[2]= plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][1] - plane.Plane[coppia[0]][1]*plane.Plane[coppia[1]][0];
 
-        if (V[0]!=0 || V[1]!=0 || V[2]!=0)
+        if (V[0]!=0 || V[1]!=0 || V[2]!=0)  //esclude fratture parallele
         {
+            //calcola le coordinate P intersecando i due piani precedenti con un terzo piano perpendicolare a entrambi
+
             Matrix3d C;
             C << plane.Plane[coppia[0]][0], plane.Plane[coppia[0]][1], plane.Plane[coppia[0]][2],
                 plane.Plane[coppia[1]][0], plane.Plane[coppia[1]][1], plane.Plane[coppia[1]][02],
@@ -316,19 +371,23 @@ void RettaIntersezione(Piano &plane,
     }
 }
 
-/*
-void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn,
-                      map<unsigned int, array<array<double, 3>, 2>>& intersezioni)
+void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn)
 {
-    for(const auto& pair : Retta)
+    unsigned int Id_traccia = 0;
+    for(const auto& pair : Retta)     //itera le coppie (e le rispettive rette di intersezione)
     {
-        for(int i = 0; i<2; i++)
+        //double s,t
+
+        array<vector<double>, 2> Parametri_t = {};     //P + tV identifica i punti di intrsezione tra la retta e i bordi delle fratture
+
+        for(int i = 0; i<2; i++)      //itera sulle due fratture (della coppia)
         {
+
             unsigned int Id = pair.first[i];
-            //cout << Id <<endl;
-            for (unsigned int j=0; j < dfn.FractureCoordinates[Id].size(); j++)
+
+            for (unsigned int j=0; j < dfn.FractureCoordinates[Id].size(); j++)   //itera sui vertici della frattura
             {
-                array<array<double, 3>, 2> lato = {};
+                array<array<double, 3>, 2> lato = {};      //memorizza gli estremi dei lati
 
                 if (j == dfn.FractureCoordinates[Id].size()-1)
                 {
@@ -338,6 +397,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 {
                     lato = {dfn.FractureCoordinates[Id][j], dfn.FractureCoordinates[Id][j+1]};
                 }
+
                 array<double, 3> retta1 = {lato[0][0]-pair.second[0][0], lato[0][1]-pair.second[0][1], lato[0][2]-pair.second[0][2]};
                 array<double, 3> retta2 = {lato[1][0]-pair.second[0][0], lato[1][1]-pair.second[0][1], lato[1][2]-pair.second[0][2]};
 
@@ -345,10 +405,9 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 array<double, 3> prod_vett2 = {retta2[1]*pair.second[1][2]-retta2[2]*pair.second[1][1], retta2[2]*pair.second[1][0]-retta2[0]*pair.second[1][2], retta2[0]*pair.second[1][1]-retta2[1]*pair.second[1][0]};
 
                 double prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
-                //cout << prod_scal << endl;
-                if (prod_scal < 0)
+
+                if (prod_scal < 0)    //indica se il lato viene intersecato dalla retta
                 {
-                    double t,s;
                     array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
 
                     MatrixXd C(3,2);
@@ -358,14 +417,85 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                     B << lato[0][0] - pair.second[0][0], lato[0][1] - pair.second[0][1], lato[0][2] - pair.second[0][2] ;
 
                     VectorXd X = C.colPivHouseholderQr().solve(B);
-                    t =X[0];
-                    s =X[1];
-                    //cout << t << " " << s << endl;
 
+                    Parametri_t[i].push_back(X[0]);
                 }
             }
         }
+
+        if(Parametri_t[0].size() !=0 && Parametri_t[1].size() != 0)    //interessano solo i casi di intersezione
+        {
+            if(max(Parametri_t[0][0], Parametri_t[0][1]) >= min(Parametri_t[1][0], Parametri_t[1][0]))      //assicura l'esistenza di una traccia
+            {
+                double T1_traccia, T2_traccia;
+                T1_traccia = max(Parametri_t[0][0], Parametri_t[1][0]);     //coefficienti t degli estremi della traccia
+                T2_traccia = min(Parametri_t[0][1], Parametri_t[1][1]);
+
+                dfn.FractureTraces[pair.first[0]].push_back(Id_traccia);    //associa alla frattura la traccia
+
+                dfn.FractureTraces[pair.first[1]].push_back(Id_traccia);
+
+                dfn.TracesFractures[Id_traccia] = pair.first;               //associa alla traccia la coppia di fratture che la genera
+
+                double tol = 1e-15;        //tolleranza
+
+                if(abs(T1_traccia - Parametri_t[0][0]) < tol && abs(T2_traccia - Parametri_t[0][1]) < tol)     //controlla se la traccia è passante (con una tolleranza minima)
+                {
+                    array<unsigned int, 2> coppia = {Id_traccia,pair.first[0]};
+                    dfn.Tips[coppia] = false;
+
+                }
+
+                else
+                {
+                    array<unsigned int, 2> coppia = {Id_traccia,pair.first[0]};
+                    dfn.Tips[coppia] = true;
+
+                }
+
+                if(abs(T1_traccia - Parametri_t[1][0]) < tol && abs(T2_traccia - Parametri_t[1][1]) < tol)
+                {
+                    array<unsigned int, 2> coppia = {Id_traccia,pair.first[1]};
+                    dfn.Tips[coppia] = false;
+                }
+
+                else
+                {
+                    array<unsigned int, 2> coppia = {Id_traccia,pair.first[1]};
+                    dfn.Tips[coppia] = true;
+                }
+
+                double x1,x2,y1,y2,z1,z2;
+
+                x1 = pair.second[0][0] + T1_traccia * pair.second[1][0];
+                y1 = pair.second[0][1] + T1_traccia * pair.second[1][1];
+                z1 = pair.second[0][2] + T1_traccia * pair.second[1][2];
+
+
+                array<double, 3> estremo1 = {x1,y1,z1};      //primo estremo della traccia
+
+                x2 = pair.second[0][0] + T2_traccia * pair.second[1][0];
+                y2 = pair.second[0][1] + T2_traccia * pair.second[1][1];
+                z2 = pair.second[0][2] + T2_traccia * pair.second[1][2];
+
+                array<double, 3> estremo2 = {x2,y2,z2};     //secondo estremo della traccia
+
+                array<array<double, 3>, 2> estremi = {estremo1, estremo2};
+
+
+                dfn.TracesVertices[Id_traccia] = estremi;       //associa alla traccia i suoi estremi
+
+
+                dfn.TracesId.push_back(Id_traccia);        //memorizza l'Id della traccia
+
+
+                Id_traccia = Id_traccia+1;
+            }
+        }
+
     }
+
+    dfn.NumberTraces = dfn.TracesId.size();        //calcola il numero di tracce totali
 }
-*/
+
 }

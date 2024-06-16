@@ -21,9 +21,10 @@ struct DFN
 
     unsigned int NumberTraces = 0;                                         //numero di tracce
     vector<unsigned int> TracesId = {};                                    //Id tracce
-    vector<array<array<double, 3>,2>> TracesCoordinates = {};              //coordinate dei vertici (Id traccia, estremo, coordinata)
     map<unsigned int, array<array<double, 3>,2>> TracesVertices = {};      //mappa Id-coordinate vertici
     map<unsigned int, array<unsigned int, 2>> TracesFractures = {};        //mappa Id-Id fratture generanti
+    map<unsigned int, vector<unsigned int>> FractureTraces = {};           //mappa Id frattura-Id tracce
+    map<array<unsigned, 2>, bool> Tips = {};                               //mappa Id traccia/Id fratture-passante
 };
 
 struct Piano
