@@ -17,7 +17,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR362_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -62,7 +62,7 @@ bool ImportFractures(const string &file_name, DFN& dfn, Piano& Plane)
         stringstream ss(riga);
 
         ss >> n >> ch;                     //legge Id frattura, scarta ";"
-        dfn.FractureId[i] = n;            //aggiunge Id all'elenco
+        dfn.FractureId[i] = n;             //aggiunge Id all'elenco
         dfn.FracturesVertices[n] = {};     //aggiunge Id come chiave della mappa
         Plane.PlaneId[i]=n;
 
@@ -70,14 +70,14 @@ bool ImportFractures(const string &file_name, DFN& dfn, Piano& Plane)
 
         dfn.FractureCoordinates[i].resize(n);     //riscala il vettore
 
-        getline(file, riga);    //scarta intestazione
+        getline(file, riga);        //scarta intestazione
 
         for (int k=0; k < 3; k++)   //ciclo for (per ogni componente dei vertici)
         {
             getline(file, riga);    // riga con le coordinate
             stringstream ss(riga);
 
-            for (unsigned int j =0; j < n; j++)                // ciclo for (per ogni vertice)
+            for (unsigned int j =0; j < n; j++)                    // ciclo for (per ogni vertice)
             {
                 ss >> coordinata >> ch;                            //estrae coordinata, scarta ";"
                 dfn.FractureCoordinates[i][j][k] = coordinata;     //memorizza la coordinata
@@ -104,10 +104,32 @@ void ParametriPiano(vector<array<double,3>> parametri, array<double, 4>& Coeffic
 {
     double a, b, c, d;
 
-    a = ((parametri[1][1] - parametri[0][1]) * (parametri[1][2] - parametri[0][2])) - ((parametri[2][1] - parametri[0][1]) * (parametri[2][2] - parametri[0][2]));
-    b = ((parametri[1][0] - parametri[0][0]) * (parametri[2][2] - parametri[0][2])) - ((parametri[1][2] - parametri[0][2]) * (parametri[2][0] - parametri[0][0]));
+    a = ((parametri[1][1] - parametri[0][1]) * (parametri[2][2] - parametri[0][2])) - ((parametri[2][1] - parametri[0][1]) * (parametri[1][2] - parametri[0][2]));
+    b = -((parametri[1][0] - parametri[0][0]) * (parametri[2][2] - parametri[0][2])) - ((parametri[1][2] - parametri[0][2]) * (parametri[2][0] - parametri[0][0]));
     c = ((parametri[1][0] - parametri[0][0]) * (parametri[2][1] - parametri[0][1])) - ((parametri[1][1] - parametri[0][1]) * (parametri[2][0] - parametri[0][0]));
-    d= -(a * parametri[0][0] + b * parametri[0][1] + c * parametri[0][2]);
+
+    double tol = 1e-12;
+
+    if(abs(a)<tol)
+    {
+        a = 0;
+    }
+
+    if(abs(b)<tol)
+    {
+        b = 0;
+    }
+    if(abs(c)<tol)
+    {
+        c = 0;
+    }
+
+    d = - (a * parametri[0][0] + b * parametri[0][1] + c * parametri[0][2]);
+
+    if(abs(d)<tol)
+    {
+        d = 0;
+    }
 
     Coefficienti_piano[0] = a;
     Coefficienti_piano[1] = b;
@@ -240,13 +262,15 @@ void StampaTracce(const string& file_name, DFN& dfn)
 
         file << "--------------------------------------------------------" << endl;
 
-        for (unsigned int i : dfn.FractureId)        //inizio stampa seconda parte
+        file << endl;
+
+        for (auto pair : dfn.FractureTraces)        //inizio stampa seconda parte
         {
             file << "# FractureId; NumTraces" << endl;
-            file << "   " << i << "; " << dfn.FractureTraces[i].size() << endl;
+            file << "   " << pair.first << "; " << pair.second.size() << endl;
             file << "# TraceId; Tips; Length" << endl;
 
-            vector<unsigned int> tracce = dfn.FractureTraces[i];     //occorre ordinare le tracce e misurarne la lunghezza
+            vector<unsigned int> tracce = pair.second;               //occorre ordinare le tracce e misurarne la lunghezza
             map<unsigned int, double> lunghezza = {};                //mappa traccia-lunghezza
 
             for (unsigned int k = 0; k < tracce.size(); k = k+1)
@@ -265,14 +289,14 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 unsigned int prossimo = tracce[k];           //algoritmo di sorting che ordina le tracce in base a Tips
                 int j = k;
 
-                array<unsigned int, 2> coppia1 = {prossimo,i};
-                array<unsigned int, 2> coppia2 = {tracce[j-1],i};
+                array<unsigned int, 2> coppia1 = {prossimo,pair.first};
+                array<unsigned int, 2> coppia2 = {tracce[j-1],pair.first};
 
                 while ((j > 0) && dfn.Tips[coppia1] < dfn.Tips[coppia2])
                 {
                     tracce[j] = tracce[j-1];
                     j = j-1;
-                    coppia2 = {tracce[j-1], i};
+                    coppia2 = {tracce[j-1], pair.first};
                 }
                 tracce[j] = prossimo;
             }
@@ -282,21 +306,21 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 unsigned int prossimo = tracce[k];
                 int j = k;
 
-                array<unsigned int, 2> coppia1 = {prossimo,i};
-                array<unsigned int, 2> coppia2 = {tracce[j-1],i};
+                array<unsigned int, 2> coppia1 = {prossimo,pair.first};
+                array<unsigned int, 2> coppia2 = {tracce[j-1],pair.first};
 
                 while ((j > 0) && lunghezza[tracce[j-1]] < lunghezza[prossimo] && dfn.Tips[coppia1] == dfn.Tips[coppia2])
                 {
                     tracce[j] = tracce[j-1];
                     j = j-1;
-                    coppia2 = {tracce[j-1], i};
+                    coppia2 = {tracce[j-1], pair.first};
                 }
                 tracce[j] = prossimo;
             }
 
             for(unsigned int Id_traccia : tracce)        //stampa seconda parte
             {
-                array<unsigned int, 2> coppia = {Id_traccia,i};
+                array<unsigned int, 2> coppia = {Id_traccia,pair.first};
                 file << "   " << Id_traccia << "; " << dfn.Tips[coppia] << "; " << lunghezza[Id_traccia] << endl;
             }
             file << endl;
@@ -347,23 +371,55 @@ void RettaIntersezione(Piano &plane,
         V[1]= plane.Plane[coppia[1]][0]*plane.Plane[coppia[0]][2] - plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][2];
         V[2]= plane.Plane[coppia[0]][0]*plane.Plane[coppia[1]][1] - plane.Plane[coppia[0]][1]*plane.Plane[coppia[1]][0];
 
+
+        double tol = 1e-12;
+
+        if(abs(V[0]) < tol)
+        {
+            V[0] = 0;
+        }
+
+        if(abs(V[1]) < tol)
+        {
+            V[1] = 0;
+        }
+
+        if(abs(V[2]) < tol)
+        {
+            V[2] = 0;
+        }
+
         if (V[0]!=0 || V[1]!=0 || V[2]!=0)  //esclude fratture parallele
         {
             //calcola le coordinate P intersecando i due piani precedenti con un terzo piano perpendicolare a entrambi
 
             Matrix3d C;
             C << plane.Plane[coppia[0]][0], plane.Plane[coppia[0]][1], plane.Plane[coppia[0]][2],
-                plane.Plane[coppia[1]][0], plane.Plane[coppia[1]][1], plane.Plane[coppia[1]][02],
+                plane.Plane[coppia[1]][0], plane.Plane[coppia[1]][1], plane.Plane[coppia[1]][2],
                 V[0], V[1], V[2];
 
             Vector3d B;
-            B << -plane.Plane[coppia[0]][3], -plane.Plane[coppia[1]][3], 0;
+            B << -plane.Plane[coppia[0]][3], -plane.Plane[coppia[1]][3], -0;
 
             Vector3d X = C.colPivHouseholderQr().solve(B);
             P[0]=X[0];
             P[1]=X[1];
             P[2]=X[2];
 
+            if(abs(P[0]) < tol)
+            {
+                P[0] = 0;
+            }
+
+            if(abs(P[1]) < tol)
+            {
+                P[1] = 0;
+            }
+
+            if(abs(P[2]) < tol)
+            {
+                P[2] = 0;
+            }
 
             array<array<double,3>,2> PV={P,V};
             Retta[coppia]=PV;
@@ -374,6 +430,8 @@ void RettaIntersezione(Piano &plane,
 void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn)
 {
     unsigned int Id_traccia = 0;
+    double prod_scal;
+
     for(const auto& pair : Retta)     //itera le coppie (e le rispettive rette di intersezione)
     {
         //double s,t
@@ -382,7 +440,6 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
         for(int i = 0; i<2; i++)      //itera sulle due fratture (della coppia)
         {
-
             unsigned int Id = pair.first[i];
 
             for (unsigned int j=0; j < dfn.FractureCoordinates[Id].size(); j++)   //itera sui vertici della frattura
@@ -404,7 +461,28 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 array<double, 3> prod_vett1 = {retta1[1]*pair.second[1][2]-retta1[2]*pair.second[1][1], retta1[2]*pair.second[1][0]-retta1[0]*pair.second[1][2], retta1[0]*pair.second[1][1]-retta1[1]*pair.second[1][0]};
                 array<double, 3> prod_vett2 = {retta2[1]*pair.second[1][2]-retta2[2]*pair.second[1][1], retta2[2]*pair.second[1][0]-retta2[0]*pair.second[1][2], retta2[0]*pair.second[1][1]-retta2[1]*pair.second[1][0]};
 
-                double prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
+                prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
+
+                /*
+                if(pair.first[0] == 1 && pair.first[1] == 2)
+                {
+                    cout << pair.first[0] << " " << pair.first[1]<<endl;
+                    cout << endl;
+                    cout << "Frattura: " << Id << endl;
+                    cout << endl;
+                    cout << "P: "<<pair.second[0][0] << " " << pair.second[0][1] << " " << pair.second[0][2] <<endl;
+                    cout << "V: "<<pair.second[1][0] << " " << pair.second[1][1] << " " << pair.second[1][2] <<endl;
+                    cout <<endl;
+                    cout << "Lato: " << j << endl;
+                    cout << endl;
+                    cout << "V1-P: " << retta1[0] << " " << retta1[1] << " " << retta1[2] <<endl;
+                    cout << "V2-P: " << retta2[0] << " " << retta2[1] << " " << retta2[2] <<endl;
+                    cout << "Prod. vett. 1: " << prod_vett1[0] << " "<< prod_vett1[1] << " "<< prod_vett1[2] << endl;
+                    cout << "Prod. vett. 2: " << prod_vett2[0] << " "<< prod_vett2[1] << " "<< prod_vett2[2] << endl;
+                    cout << "Prodotto scalare: " << prod_scal<< endl;
+                    cout << endl;
+                }
+                */
 
                 if (prod_scal < 0)    //indica se il lato viene intersecato dalla retta
                 {
