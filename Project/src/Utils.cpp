@@ -17,7 +17,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR362_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR10_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -318,6 +318,8 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 tracce[j] = prossimo;
             }
 
+            dfn.FractureTraces[pair.first] = tracce;     //memorizza le tracce in ordine
+
             for(unsigned int Id_traccia : tracce)        //stampa seconda parte
             {
                 array<unsigned int, 2> coppia = {Id_traccia,pair.first};
@@ -486,6 +488,10 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
                 if (prod_scal < 0)    //indica se il lato viene intersecato dalla retta
                 {
+                    array<unsigned int, 2> duo = {Id_traccia, Id};
+                    dfn.Retta[duo] = pair.second;        //è uno strumentopolo che ci servirà più tardi
+                    dfn.LatiIntersecati[duo][i] = j;
+
                     array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
 
                     MatrixXd C(3,2);
@@ -574,6 +580,15 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
     }
 
     dfn.NumberTraces = dfn.TracesId.size();        //calcola il numero di tracce totali
+}
+
+
+void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
+{
+    for (unsigned int Id_frattura : dfn.FractureId)
+    {
+        for(unsigned int Id_traccia : dfn.FractureTraces)
+    }
 }
 
 }

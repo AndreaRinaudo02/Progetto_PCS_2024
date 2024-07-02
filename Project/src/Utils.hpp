@@ -28,4 +28,6 @@ void RettaIntersezione(Piano &Plane,
 
 void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn);
 
+void TagliaTracce(DFN& dfn, PolygonalMesh& mesh);
+
 }
