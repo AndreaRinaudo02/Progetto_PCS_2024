@@ -17,7 +17,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR10_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -585,9 +585,74 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
 void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 {
-    for (unsigned int Id_frattura : dfn.FractureId)
+    for (const unsigned int Id_frattura : dfn.FractureId)
     {
-        for(unsigned int Id_traccia : dfn.FractureTraces)
+        bool it=true;
+
+        for (const unsigned int Id_traccia : dfn.FractureTraces[Id_frattura])
+        {
+            array<unsigned int,2> Copp = {Id_traccia, Id_frattura};
+            vector<vector<array<double, 3>>> Sottopoligoni={};
+
+            if (it==true)
+            {
+                array<  unsigned int, 2> J = dfn.LatiIntersecati[Copp];
+                vector<array<double,3>> Sotto1={};
+                vector<array<double,3>> Sotto2={};
+                vector<array<double,3>> Vertici=dfn.FractureCoordinates[Id_frattura];
+                for (unsigned int i = 0; i < Vertici.size(); i++ )
+                {
+                    if ( dfn.TracesVertices[Id_traccia][0] != Vertici[i] && dfn.TracesVertices[Id_traccia][1] != Vertici[i])
+                    {
+                        if (i<=J[0])
+                        {
+                            Sotto1.push_back(Vertici[i]);
+                        }
+                        else if ( i == J[0])
+                        {
+                            Sotto1.push_back(dfn.TracesVertices[Id_traccia][0]);
+                            Sotto1.push_back(dfn.TracesVertices[Id_traccia][1]);
+                        }
+                        else if ( i > J[1] )
+                        {
+                            Sotto1.push_back(Vertici[i]);
+                        }
+
+
+                        if ( i == J[0])
+                        {
+                            Sotto2.push_back(dfn.TracesVertices[Id_traccia][1]);
+                            Sotto2.push_back(dfn.TracesVertices[Id_traccia][0]);
+                        }
+                        else if ( i > J[0] && i <= J[1])
+                        {
+                            Sotto2.push_back(Vertici[i]);
+                        }
+                    }
+                }
+
+                Sottopoligoni.push_back(Sotto1);
+                Sottopoligoni.push_back(Sotto2);
+
+                it=false;
+            }
+            else
+            {
+                while( dfn.Tips[Copp] == false )
+                {
+                    vector<array<double,3>> Sotto1={};
+                    vector<array<double,3>> Sotto2={};
+
+                }
+
+                while( dfn.Tips[Copp] == true )
+                {
+                    vector<array<double,3>> Sotto1={};
+                    vector<array<double,3>> Sotto2={};
+                }
+            }
+
+        }
     }
 }
 
