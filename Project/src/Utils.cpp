@@ -593,42 +593,137 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
         {
             array<unsigned int,2> Copp = {Id_traccia, Id_frattura};
             vector<vector<array<double, 3>>> Sottopoligoni={};
+            vector<array<double,3>> Vertici=dfn.FractureCoordinates[Id_frattura];
 
             if (it==true)
             {
-                array<  unsigned int, 2> J = dfn.LatiIntersecati[Copp];
+                array<unsigned int, 2> J = dfn.LatiIntersecati[Copp];
+                array<unsigned int, 2> J1 = {};
+                array<unsigned int, 2> J2 = {};
+
                 vector<array<double,3>> Sotto1={};
                 vector<array<double,3>> Sotto2={};
-                vector<array<double,3>> Vertici=dfn.FractureCoordinates[Id_frattura];
-                for (unsigned int i = 0; i < Vertici.size(); i++ )
+
+                if(J[1] == Vertici.size())
                 {
-                    if ( dfn.TracesVertices[Id_traccia][0] != Vertici[i] && dfn.TracesVertices[Id_traccia][1] != Vertici[i])
+                    J1[0] = J[0];
+                    J1[1] = J[0]+1;
+
+                    J2[0] = J[1];
+                    J2[1] = 0;
+                }
+
+                else
+                {
+                    J1[0] = J[0];
+                    J1[1] = J[0]+1;
+
+                    J2[0] = J[1];
+                    J2[1] = J[1]+1;
+                }
+
+                if(dfn.Tips[Copp] == false)
+                {
+                    for (unsigned int i = 0; i < Vertici.size(); i++ )
                     {
-                        if (i<=J[0])
+                        if ( dfn.TracesVertices[Id_traccia][0] != Vertici[i] && dfn.TracesVertices[Id_traccia][1] != Vertici[i])
                         {
-                            Sotto1.push_back(Vertici[i]);
-                        }
-                        else if ( i == J[0])
-                        {
-                            Sotto1.push_back(dfn.TracesVertices[Id_traccia][0]);
-                            Sotto1.push_back(dfn.TracesVertices[Id_traccia][1]);
-                        }
-                        else if ( i > J[1] )
-                        {
-                            Sotto1.push_back(Vertici[i]);
-                        }
+                            if (i<=J[0])
+                            {
+                                Sotto1.push_back(Vertici[i]);
+                            }
+                            else if ( i == J[0])
+                            {
+                                Sotto1.push_back(dfn.TracesVertices[Id_traccia][0]);
+                                Sotto1.push_back(dfn.TracesVertices[Id_traccia][1]);
+                            }
+                            else if ( i > J[1] )
+                            {
+                                Sotto1.push_back(Vertici[i]);
+                            }
 
 
-                        if ( i == J[0])
-                        {
-                            Sotto2.push_back(dfn.TracesVertices[Id_traccia][1]);
-                            Sotto2.push_back(dfn.TracesVertices[Id_traccia][0]);
-                        }
-                        else if ( i > J[0] && i <= J[1])
-                        {
-                            Sotto2.push_back(Vertici[i]);
+                            if ( i == J[0])
+                            {
+                                Sotto2.push_back(dfn.TracesVertices[Id_traccia][1]);
+                                Sotto2.push_back(dfn.TracesVertices[Id_traccia][0]);
+                            }
+                            else if ( i > J[0] && i <= J[1])
+                            {
+                                Sotto2.push_back(Vertici[i]);
+                            }
                         }
                     }
+                }
+
+                else
+                {
+                    array<array<double,3>,2> PV = dfn.Retta[Copp];
+
+                    MatrixXd C(3,2);
+                    C << PV[1][0], Vertici[J1[0]][0]-Vertici[J1[1]][0], PV[1][1], Vertici[J1[0]][1]-Vertici[J1[1]][1], PV[1][2], Vertici[J1[0]][2]-Vertici[J1[1]][2];
+
+                    Vector3d B;
+                    B << Vertici[J1[0]][0] - PV[0][0], Vertici[J1[0]][1] - PV[0][1], Vertici[J1[0]][2] - PV[0][2];
+
+                    VectorXd X = C.colPivHouseholderQr().solve(B);
+
+                    double t = X[0];
+
+                    array<double,3> estremo1 = {};
+
+                    estremo1[0] = PV[0][0] + t*PV[1][0];
+                    estremo1[1] = PV[0][1] + t*PV[1][1];
+                    estremo1[2] = PV[0][2] + t*PV[1][2];
+
+                    MatrixXd A(3,2);
+                    A << PV[1][0], Vertici[J2[0]][0]-Vertici[J2[1]][0], PV[1][1], Vertici[J2[0]][1]-Vertici[J2[1]][1], PV[1][2], Vertici[J2[0]][2]-Vertici[J2[1]][2];
+
+                    Vector3d D;
+                    D << Vertici[J2[0]][0] - PV[0][0], Vertici[J2[0]][1] - PV[0][1], Vertici[J2[0]][2] - PV[0][2];
+
+                    VectorXd Y = A.colPivHouseholderQr().solve(D);
+
+                    t = Y[0];
+
+                    array<double,3> estremo2 = {};
+
+                    estremo2[0] = PV[0][0] + t*PV[1][0];
+                    estremo2[1] = PV[0][1] + t*PV[1][1];
+                    estremo2[2] = PV[0][2] + t*PV[1][2];
+
+                    for (unsigned int i = 0; i < Vertici.size(); i++ )
+                    {
+                        if ( estremo1 != Vertici[i] && estremo2 != Vertici[i])
+                        {
+                            if (i<=J[0])
+                            {
+                                Sotto1.push_back(Vertici[i]);
+                            }
+                            else if ( i == J[0])
+                            {
+                                Sotto1.push_back(estremo1);
+                                Sotto1.push_back(estremo2);
+                            }
+                            else if ( i > J[1] )
+                            {
+                                Sotto1.push_back(Vertici[i]);
+                            }
+
+
+                            if ( i == J[0])
+                            {
+                                Sotto2.push_back(estremo2);
+                                Sotto2.push_back(estremo1);
+                            }
+                            else if ( i > J[0] && i <= J[1])
+                            {
+                                Sotto2.push_back(Vertici[i]);
+                            }
+                        }
+                    }
+
+
                 }
 
                 Sottopoligoni.push_back(Sotto1);
@@ -638,14 +733,14 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
             }
             else
             {
-                while( dfn.Tips[Copp] == false )
+                if( dfn.Tips[Copp] == false )
                 {
                     vector<array<double,3>> Sotto1={};
                     vector<array<double,3>> Sotto2={};
 
                 }
 
-                while( dfn.Tips[Copp] == true )
+                if( dfn.Tips[Copp] == true )
                 {
                     vector<array<double,3>> Sotto1={};
                     vector<array<double,3>> Sotto2={};
