@@ -509,7 +509,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
         if(Parametri_t[0].size() !=0 && Parametri_t[1].size() != 0)    //interessano solo i casi di intersezione
         {
-            if(max(Parametri_t[0][0], Parametri_t[0][1]) >= min(Parametri_t[1][0], Parametri_t[1][0]))      //assicura l'esistenza di una traccia
+            if(max(Parametri_t[0][0], Parametri_t[0][1]) >= min(Parametri_t[1][0], Parametri_t[1][1]))      //assicura l'esistenza di una traccia
             {
                 double T1_traccia, T2_traccia;
                 T1_traccia = max(Parametri_t[0][0], Parametri_t[1][0]);     //coefficienti t degli estremi della traccia
@@ -585,26 +585,26 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
 void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 {
-    for (const unsigned int Id_frattura : dfn.FractureId)
+    for (const unsigned int Id_frattura : dfn.FractureId)       //ciclo sulle fratture
     {
-        bool it=true;
+        bool it=true;                                           //rimane true solo al primo passaggio (la prima traccia presa in considerazione)
+        vector<vector<array<double, 3>>> Sottopoligoni = {};    //memorizza i sottopoligoni in cui viene divisa la frattura
 
-        for (const unsigned int Id_traccia : dfn.FractureTraces[Id_frattura])
+        for (const unsigned int Id_traccia : dfn.FractureTraces[Id_frattura])     //itera sulle tracce
         {
             array<unsigned int,2> Copp = {Id_traccia, Id_frattura};
-            vector<vector<array<double, 3>>> Sottopoligoni={};
-            vector<array<double,3>> Vertici=dfn.FractureCoordinates[Id_frattura];
 
             if (it==true)
             {
-                array<unsigned int, 2> J = dfn.LatiIntersecati[Copp];
-                array<unsigned int, 2> J1 = {};
-                array<unsigned int, 2> J2 = {};
+                vector<array<double,3>> Vertici = dfn.FractureCoordinates[Id_frattura];
+                array<unsigned int, 2> J = dfn.LatiIntersecati[Copp];      //serve per non ciclare sui lati
+                array<unsigned int, 2> J1 = {};         //memorizza gli estremi del primo lato intersecato
+                array<unsigned int, 2> J2 = {};         //memorizza gli estremi del secondo lato intersecato
 
-                vector<array<double,3>> Sotto1={};
-                vector<array<double,3>> Sotto2={};
+                vector<array<double,3>> Sotto1 = {};    //memorizzano i due sottopoligoni
+                vector<array<double,3>> Sotto2 = {};
 
-                if(J[1] == Vertici.size())
+                if(J[1] == Vertici.size()-1)
                 {
                     J1[0] = J[0];
                     J1[1] = J[0]+1;
@@ -622,6 +622,7 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                     J2[1] = J[1]+1;
                 }
 
+                //traccia passante
                 if(dfn.Tips[Copp] == false)
                 {
                     for (unsigned int i = 0; i < Vertici.size(); i++ )
@@ -656,9 +657,10 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                     }
                 }
 
+                //se non passante
                 else
                 {
-                    array<array<double,3>,2> PV = dfn.Retta[Copp];
+                    array<array<double,3>,2> PV = dfn.Retta[Copp];  //bisogna calcolare l'intersezione della retta su cui giace la traccia con i lati che interseca
 
                     MatrixXd C(3,2);
                     C << PV[1][0], Vertici[J1[0]][0]-Vertici[J1[1]][0], PV[1][1], Vertici[J1[0]][1]-Vertici[J1[1]][1], PV[1][2], Vertici[J1[0]][2]-Vertici[J1[1]][2];
@@ -730,23 +732,296 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                 Sottopoligoni.push_back(Sotto2);
 
                 it=false;
+
             }
-            else
+
+            else     //tutte le altre tracce (dalla seconda in poi)
             {
-                if( dfn.Tips[Copp] == false )
-                {
-                    vector<array<double,3>> Sotto1={};
-                    vector<array<double,3>> Sotto2={};
+                vector<vector<array<double, 3>>> Sottopoligoni_copia = {};   //memorizza i sottopoligoni da usare per la prossima iterazione
 
+                if( dfn.Tips[Copp] == false )  //traccia passante (se interseca un lato passa per il sottopoligono)
+                {
+                    array<array<double,3>,2> PV = dfn.Retta[Copp];
+
+                    for(const vector<array<double, 3>>& sottopoligono : Sottopoligoni)
+                    {
+
+                        bool primo = false;
+                        vector<array<double,3>> Sotto1 = {};
+                        vector<array<double,3>> Sotto2 = {};
+
+                        array<double,3> estremo1 = {};
+                        array<double,3> estremo2 = {};
+                        array<unsigned int, 2> J = {};
+
+                        for (unsigned int j=0; j < sottopoligono.size(); j++)          //itera sui vertici del sottopoligono
+                        {
+                            array<array<double, 3>, 2> lato = {};                      //memorizza gli estremi dei lati
+
+                            if (j == sottopoligono.size()-1)
+                            {
+                                lato = {sottopoligono[j], sottopoligono[0]};
+                            }
+                            else
+                            {
+                                lato = {sottopoligono[j], sottopoligono[j+1]};
+                            }
+
+                            array<double, 3> retta1 = {lato[0][0]-PV[0][0], lato[0][1]-PV[0][1], lato[0][2]-PV[0][2]};
+                            array<double, 3> retta2 = {lato[1][0]-PV[0][0], lato[1][1]-PV[0][1], lato[1][2]-PV[0][2]};
+
+                            array<double, 3> prod_vett1 = {retta1[1]*PV[1][2]-retta1[2]*PV[1][1], retta1[2]*PV[1][0]-retta1[0]*PV[1][2], retta1[0]*PV[1][1]-retta1[1]*PV[1][0]};
+                            array<double, 3> prod_vett2 = {retta2[1]*PV[1][2]-retta2[2]*PV[1][1], retta2[2]*PV[1][0]-retta2[0]*PV[1][2], retta2[0]*PV[1][1]-retta2[1]*PV[1][0]};
+
+                            double prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
+
+                            if (prod_scal < 0)      //indica se il lato viene intersecato dalla retta
+                            {
+                                array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
+
+                                MatrixXd C(3,2);
+                                C << PV[1][0], -d[0], PV[1][1], -d[1], PV[1][2], -d[2];
+
+                                Vector3d B;
+                                B << lato[0][0] - PV[0][0], lato[0][1] - PV[0][1], lato[0][2] - PV[0][2] ;
+
+                                VectorXd X = C.colPivHouseholderQr().solve(B);
+
+                                double t = X[0];
+
+                                if(primo == false)  //significa che ha trovato almeno un'interseione (sono per forza due)
+                                {
+                                    estremo1[0] = PV[0][0] + t*PV[1][0];
+                                    estremo1[1] = PV[0][1] + t*PV[1][1];
+                                    estremo1[2] = PV[0][2] + t*PV[1][2];
+                                    J[0] = j;
+                                    primo = true;
+                                }
+                                else
+                                {
+                                    estremo2[0] = PV[0][0] + t*PV[1][0];
+                                    estremo2[1] = PV[0][1] + t*PV[1][1];
+                                    estremo2[2] = PV[0][2] + t*PV[1][2];
+                                    J[1] = j;
+                                }
+
+                            }
+                        }
+
+                        if (primo == true)     //memorizza gli estremi del sottopoligono
+                        {
+                            for (unsigned int i = 0; i < sottopoligono.size(); i++ )
+                            {
+                                if ( estremo1 != sottopoligono[i] && estremo2 != sottopoligono[i])
+                                {
+                                    if (i<=J[0])
+                                    {
+                                        Sotto1.push_back(sottopoligono[i]);
+                                    }
+                                    else if ( i == J[0])
+                                    {
+                                        Sotto1.push_back(estremo1);
+                                        Sotto1.push_back(estremo2);
+                                    }
+                                    else if ( i > J[1] )
+                                    {
+                                        Sotto1.push_back(sottopoligono[i]);
+                                    }
+
+
+                                    if ( i == J[0])
+                                    {
+                                        Sotto2.push_back(estremo2);
+                                        Sotto2.push_back(estremo1);
+                                    }
+                                    else if ( i > J[0] && i <= J[1])
+                                    {
+                                        Sotto2.push_back(sottopoligono[i]);
+                                    }
+                                }
+                            }
+                            Sottopoligoni_copia.push_back(Sotto1);
+                            Sottopoligoni_copia.push_back(Sotto2);
+                        }
+
+                        else
+                        {
+                            Sottopoligoni_copia.push_back(sottopoligono);
+                        }
+                    }
                 }
 
-                if( dfn.Tips[Copp] == true )
+                else       //tracce non passanti (occorre fare l'inviluppo convesso)
                 {
-                    vector<array<double,3>> Sotto1={};
-                    vector<array<double,3>> Sotto2={};
+                    array<array<double,3>,2> PV = dfn.Retta[Copp];
+
+                    for(const vector<array<double, 3>>& sottopoligono : Sottopoligoni)
+                    {
+
+                        bool primo = false;
+
+                        vector<array<double,3>> Sotto1 = {};
+                        vector<array<double,3>> Sotto2 = {};
+
+                        array<double,3> estremo1 = {};
+                        array<double,3> estremo2 = {};
+
+                        array<unsigned int, 2> J = {};
+
+                        bool interna = false;
+
+                        //inviluppo convesso
+                        for(int k = 0; k < 2; k++)
+                        {
+                            if (interna == false)
+                            {
+                                int n = sottopoligono.size();
+
+                                MatrixXd A(3, n);
+                                VectorXd b(3);
+                                for (int i = 0; i < 3; ++i)
+                                {
+                                    b(i) = dfn.TracesVertices[Id_traccia][k][i];
+                                }
+
+                                for (int i = 0; i < n; ++i)
+                                {
+                                    for (int j = 0; j < 3; ++j)
+                                    {
+                                        A(j, i) = sottopoligono[i][j];
+                                    }
+                                }
+
+                                VectorXd coeffs = A.colPivHouseholderQr().solve(b);
+
+                                double sum = coeffs.sum();
+
+                                bool test = true;
+
+                                if (std::abs(sum - 1.0) > 1e-10)
+                                {
+                                    interna = false;
+                                    test = false;
+                                }
+
+                                for (int i = 0; i < n; ++i)
+                                {
+                                    if (coeffs(i) < 0 || coeffs(i) > 1)
+                                    {
+                                        interna = false;
+                                        test = false;
+                                    }
+                                }
+
+                                if (test == true)
+                                {
+                                    interna = true;
+                                }
+                            }
+
+
+                        }
+
+                        if(interna == true)
+                        {
+                            for (unsigned int j=0; j < sottopoligono.size(); j++)          //itera sui vertici del sottopoligono
+                            {
+                                array<array<double, 3>, 2> lato = {};                      //memorizza gli estremi dei lati
+
+                                if (j == sottopoligono.size()-1)
+                                {
+                                    lato = {sottopoligono[j], sottopoligono[0]};
+                                }
+                                else
+                                {
+                                    lato = {sottopoligono[j], sottopoligono[j+1]};
+                                }
+
+                                array<double, 3> retta1 = {lato[0][0]-PV[0][0], lato[0][1]-PV[0][1], lato[0][2]-PV[0][2]};
+                                array<double, 3> retta2 = {lato[1][0]-PV[0][0], lato[1][1]-PV[0][1], lato[1][2]-PV[0][2]};
+
+                                array<double, 3> prod_vett1 = {retta1[1]*PV[1][2]-retta1[2]*PV[1][1], retta1[2]*PV[1][0]-retta1[0]*PV[1][2], retta1[0]*PV[1][1]-retta1[1]*PV[1][0]};
+                                array<double, 3> prod_vett2 = {retta2[1]*PV[1][2]-retta2[2]*PV[1][1], retta2[2]*PV[1][0]-retta2[0]*PV[1][2], retta2[0]*PV[1][1]-retta2[1]*PV[1][0]};
+
+                                double prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
+
+                                if (prod_scal < 0)      //indica se il lato viene intersecato dalla retta
+                                {
+                                    array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
+
+                                    MatrixXd C(3,2);
+                                    C << PV[1][0], -d[0], PV[1][1], -d[1], PV[1][2], -d[2];
+
+                                    Vector3d B;
+                                    B << lato[0][0] - PV[0][0], lato[0][1] - PV[0][1], lato[0][2] - PV[0][2] ;
+
+                                    VectorXd X = C.colPivHouseholderQr().solve(B);
+
+                                    double t = X[0];
+
+                                    if(primo == false)
+                                    {
+                                        estremo1[0] = PV[0][0] + t*PV[1][0];
+                                        estremo1[1] = PV[0][1] + t*PV[1][1];
+                                        estremo1[2] = PV[0][2] + t*PV[1][2];
+                                        J[0] = j;
+                                        primo = true;
+                                    }
+                                    else
+                                    {
+                                        estremo2[0] = PV[0][0] + t*PV[1][0];
+                                        estremo2[1] = PV[0][1] + t*PV[1][1];
+                                        estremo2[2] = PV[0][2] + t*PV[1][2];
+                                        J[1] = j;
+                                    }
+
+                                }
+                            }
+
+
+                            for (unsigned int i = 0; i < sottopoligono.size(); i++ )
+                            {
+                                if ( estremo1 != sottopoligono[i] && estremo2 != sottopoligono[i])
+                                {
+                                    if (i<=J[0])
+                                    {
+                                        Sotto1.push_back(sottopoligono[i]);
+                                    }
+                                    else if ( i == J[0])
+                                    {
+                                        Sotto1.push_back(estremo1);
+                                        Sotto1.push_back(estremo2);
+                                    }
+                                    else if ( i > J[1] )
+                                    {
+                                        Sotto1.push_back(sottopoligono[i]);
+                                    }
+
+
+                                    if ( i == J[0])
+                                    {
+                                        Sotto2.push_back(estremo2);
+                                        Sotto2.push_back(estremo1);
+                                    }
+                                    else if ( i > J[0] && i <= J[1])
+                                    {
+                                        Sotto2.push_back(sottopoligono[i]);
+                                    }
+                                }
+                            }
+                            Sottopoligoni_copia.push_back(Sotto1);
+                            Sottopoligoni_copia.push_back(Sotto2);
+                        }
+
+                        else
+                        {
+                            Sottopoligoni_copia.push_back(sottopoligono);
+                        }
+                    }
                 }
+
+                Sottopoligoni = Sottopoligoni_copia;  //sostituisce i sottopoligoni attuali con quelli nuovi
             }
-
         }
     }
 }
