@@ -17,7 +17,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR10_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -332,31 +332,6 @@ void StampaTracce(const string& file_name, DFN& dfn)
     }
 }
 
-/*
-bool TracceTips(const string& file_name, DFN& dfn)
-{
-    ofstream file;
-    file.open(file_name);     //apre il file
-
-    if(!file.is_open())
-    {
-        cerr << "Error: Unable to open file " << file_name << endl;
-        return false;
-    }
-
-    file << "# FractureId; NumTraces" << endl;
-    file << " " << FractureTips << " " <<dfn.NumberTipsTraces << endl;
-    file << # TraceId; Tips; Length << endl;
-    for (unsigned int i:NumberTipsTraces)
-    {
-        file << TraceTips[i] << " " << Tips[i] << " " << LenghtTips[i] << endl;
-    }
-
-    file.close();
-
-    return true;
-}
-*/
 
 void RettaIntersezione(Piano &plane,
                        vector<array<unsigned int, 2>>& coppie_vicine,
@@ -464,27 +439,6 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 array<double, 3> prod_vett2 = {retta2[1]*pair.second[1][2]-retta2[2]*pair.second[1][1], retta2[2]*pair.second[1][0]-retta2[0]*pair.second[1][2], retta2[0]*pair.second[1][1]-retta2[1]*pair.second[1][0]};
 
                 prod_scal = prod_vett1[0] * prod_vett2[0] + prod_vett1[1] * prod_vett2[1] + prod_vett1[2]* prod_vett2[2];
-
-                /*
-                if(pair.first[0] == 1 && pair.first[1] == 2)
-                {
-                    cout << pair.first[0] << " " << pair.first[1]<<endl;
-                    cout << endl;
-                    cout << "Frattura: " << Id << endl;
-                    cout << endl;
-                    cout << "P: "<<pair.second[0][0] << " " << pair.second[0][1] << " " << pair.second[0][2] <<endl;
-                    cout << "V: "<<pair.second[1][0] << " " << pair.second[1][1] << " " << pair.second[1][2] <<endl;
-                    cout <<endl;
-                    cout << "Lato: " << j << endl;
-                    cout << endl;
-                    cout << "V1-P: " << retta1[0] << " " << retta1[1] << " " << retta1[2] <<endl;
-                    cout << "V2-P: " << retta2[0] << " " << retta2[1] << " " << retta2[2] <<endl;
-                    cout << "Prod. vett. 1: " << prod_vett1[0] << " "<< prod_vett1[1] << " "<< prod_vett1[2] << endl;
-                    cout << "Prod. vett. 2: " << prod_vett2[0] << " "<< prod_vett2[1] << " "<< prod_vett2[2] << endl;
-                    cout << "Prodotto scalare: " << prod_scal<< endl;
-                    cout << endl;
-                }
-                */
 
                 if (prod_scal < 0)    //indica se il lato viene intersecato dalla retta
                 {
@@ -1023,7 +977,126 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                 Sottopoligoni = Sottopoligoni_copia;  //sostituisce i sottopoligoni attuali con quelli nuovi
             }
         }
+
+        dfn.Sottopoligoni[Id_frattura] = Sottopoligoni;
     }
+
+    const string file_name = "results_2.txt";       //stampa su file
+    StampaSottopoligoni(file_name, dfn, mesh);
+}
+
+void StampaSottopoligoni(const string& file_name, DFN& dfn, PolygonalMesh& mesh)
+{
+    int N = dfn.NumberFractures;
+
+    mesh.Cell0DId.resize(N);
+    mesh.Cell0DCoordinates.resize(N);
+    mesh.Cell1DId.resize(N);
+    mesh.Cell1DVertices.resize(N);
+    mesh.Cell2DId.resize(N);
+    mesh.Cell2DEdges.resize(N);
+    mesh.Cell2DVertices.resize(N);
+
+    mesh.NumberCell0D.resize(N);
+    mesh.NumberCell1D.resize(N);
+    mesh.NumberCell2D.resize(N);
+
+    for (unsigned int Id_frattura : dfn.FractureId)
+    {
+        unsigned int Id_2D = 0;
+        unsigned int Id_1D = 0;
+        unsigned int Id_0D = 0;
+
+        vector<unsigned int> vertici0D = {};
+        vector<array<unsigned int, 2>> estremi1D = {};
+        vector<vector<unsigned int>> lati2D = {};
+        vector<vector<unsigned int>> Vertici2D = {};
+
+        for (vector<array<double,3>>& sottopoligono : dfn.Sottopoligoni[Id_frattura])
+        {
+            mesh.Cell2DId[Id_frattura].push_back(Id_2D);
+            unsigned int n = sottopoligono.size();
+            unsigned int it = 1;
+
+            mesh.Cell0DCoordinates[Id_frattura] = sottopoligono;
+            vector<unsigned int> vertici2D = {};
+            vector<unsigned int> vertici1D = {};
+            vector<unsigned int> lato2D = {};
+
+            for (unsigned int m = 0; m < n ; m++)
+            {
+                vertici2D.push_back(Id_0D);
+                vertici0D.push_back(Id_0D);
+
+                if(it < n)
+                {
+                    vertici1D.push_back(Id_1D);
+
+                    array<unsigned int, 2> estremi = {};
+                    estremi[0] = Id_0D;
+                    estremi[1] = Id_0D+1;
+                    estremi1D.push_back(estremi);
+
+                    lato2D.push_back(Id_1D);
+
+                    Id_1D += 1;
+                }
+
+                else
+                {
+                    vertici1D.push_back(Id_1D);
+
+                    array<unsigned int, 2> estremi = {};
+                    estremi[0] = Id_0D;
+                    estremi[1] = Id_0D+1-n;
+                    estremi1D.push_back(estremi);
+
+                    lato2D.push_back(Id_1D);
+
+                    Id_1D += 1;
+                }
+
+                it += 1;
+                Id_0D += 1;
+            }
+
+            Vertici2D.push_back(vertici2D);
+            mesh.Cell1DId[Id_frattura] = vertici1D;
+            lati2D.push_back(lato2D);
+
+            Id_2D += 1;
+        }
+
+        mesh.Cell2DVertices[Id_frattura] = Vertici2D;
+
+        mesh.Cell0DId[Id_frattura] = vertici0D;
+
+        mesh.Cell1DVertices[Id_frattura] = estremi1D;
+        mesh.Cell2DEdges[Id_frattura] = lati2D;
+
+        mesh.NumberCell0D[Id_frattura] = mesh.Cell0DId[Id_frattura].size();
+        mesh.NumberCell1D[Id_frattura] = mesh.Cell1DId[Id_frattura].size();
+        mesh.NumberCell2D[Id_frattura] = mesh.Cell2DId[Id_frattura].size();
+    }
+
+    ofstream file;
+    file.open(file_name);     //apre il file
+
+    for (unsigned int Id : dfn.FractureId)
+    {
+        file << "Frattura " << Id << "    Numero sottopoligoni: " << mesh.NumberCell2D[Id] << endl;
+        file << endl;
+
+        for (unsigned int it = 0; it < mesh.NumberCell2D[Id]; it++)
+        {
+            file <<"Id sottopoligono: " << mesh.Cell2DId[Id][it]<< endl;
+        }
+
+        file << endl;
+        file << endl;
+    }
+
+    file.close();
 }
 
 }

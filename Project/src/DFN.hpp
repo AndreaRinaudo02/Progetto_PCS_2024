@@ -20,7 +20,7 @@ struct DFN
     unsigned int NumberFractures = 0;                                      //numero di fratture
     vector<unsigned int> FractureId = {};                                  //Id fratture
     vector<vector<array<double, 3>>> FractureCoordinates = {};             //coordinate dei vertici (Id frattura, numero vertice, coordinata)
-    map<unsigned int, vector<array<double, 3>>> FracturesVertices = {};    //dizionario Id-coordinate vertici
+    map<unsigned int, vector<array<double, 3>>> FracturesVertices = {};    //mappa Id-coordinate vertici
 
     unsigned int NumberTraces = 0;                                         //numero di tracce
     vector<unsigned int> TracesId = {};                                    //Id tracce
@@ -30,6 +30,8 @@ struct DFN
     map<array<unsigned int, 2>, bool> Tips = {};                               //mappa Id traccia/Id fratture-passante
     map<array<unsigned int, 2>, array<array<double,3>,2>> Retta = {};          //mappa Id traccia/Id fratture-Retta (P,V)
     map<array<unsigned int, 2>, array<unsigned int ,2>> LatiIntersecati = {};  //mappa Id traccia/Id fratture-Lati intersecati
+
+    map<unsigned int, vector<vector<array<double,3>>>> Sottopoligoni = {};             //mappa Id frattura/coordinate sottopoligoni
 };
 
 struct Piano
@@ -40,21 +42,18 @@ struct Piano
 
 struct PolygonalMesh
 {
-    unsigned int NumberCell0D = 0;                                // Numero di celle 0D
-    vector<unsigned int> Cell0DId = {};                           // ID delle celle 0D
-    vector<Vector2d> Cell0DCoordinates = {};                      // Coordinate delle celle 0D
-    map<unsigned int, list<unsigned int>> Cell0DMarkers = {};     // Marcatori delle celle 0D
+    vector<unsigned int> NumberCell0D = {};                               // Numero di celle 0D
+    vector<vector<unsigned int>> Cell0DId = {};                           // ID delle celle 0D
+    vector<vector<array<double, 3>>> Cell0DCoordinates = {};              // Coordinate delle celle 0D
 
-    unsigned int NumberCell1D = 0;                                // Numero di celle 1D
-    vector<unsigned int> Cell1DId = {};                           // ID delle celle 1D
-    vector<vector<unsigned int>> Cell1DVertices = {};             // Due indici per rappresentare l'origine e la fine dello spigolo
-    map<unsigned int, list<unsigned int>> Cell1DMarkers = {};     // Marcatori delle celle 1D
+    vector<unsigned int> NumberCell1D = {};                               // Numero di celle 1D
+    vector<vector<unsigned int>> Cell1DId = {};                           // ID delle celle 1D
+    vector<vector<array<unsigned int, 2>>> Cell1DVertices = {};           // Due indici per rappresentare l'origine e la fine dello spigolo
 
-    unsigned int NumberCell2D = 0;                                // Numero di celle 2D
-    vector<unsigned int> Cell2DId = {};                           // ID delle celle 2D
-    vector<vector<unsigned int>> Cell2DVertices = {};             // Indici dei vertici delle celle 2D
-    vector<vector<unsigned int>> Cell2DEdges = {};                // Indici degli spigoli delle celle 2D
-    map<unsigned int, list<unsigned int>> Cell2DMarkers = {};     // Marcatori delle celle 2D
+    vector<unsigned int> NumberCell2D = {};                               // Numero di celle 2D
+    vector<vector<unsigned int>> Cell2DId = {};                           // ID delle celle 2D
+    vector<vector<vector<unsigned int>>> Cell2DVertices = {};             // Indici dei vertici delle celle 2D
+    vector<vector<vector<unsigned int>>> Cell2DEdges = {};                // Indici degli spigoli delle celle 2D
 };
 
 }
