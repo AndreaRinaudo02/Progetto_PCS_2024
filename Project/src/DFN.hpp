@@ -20,24 +20,24 @@ struct DFN
     unsigned int NumberFractures = 0;                                      //numero di fratture
     vector<unsigned int> FractureId = {};                                  //Id fratture
     vector<vector<array<double, 3>>> FractureCoordinates = {};             //coordinate dei vertici (Id frattura, numero vertice, coordinata)
-    map<unsigned int, vector<array<double, 3>>> FracturesVertices = {};    //mappa Id-coordinate vertici
+    vector<vector<array<double, 3>>> FracturesVertices = {};               //mappa Id-coordinate vertici
 
     unsigned int NumberTraces = 0;                                         //numero di tracce
     vector<unsigned int> TracesId = {};                                    //Id tracce
-    map<unsigned int, array<array<double, 3>,2>> TracesVertices = {};      //mappa Id-coordinate vertici
-    map<unsigned int, array<unsigned int, 2>> TracesFractures = {};        //mappa Id-Id fratture generanti
-    map<unsigned int, vector<unsigned int>> FractureTraces = {};           //mappa Id frattura-Id tracce
+    vector<array<array<double, 3>,2>> TracesVertices = {};                 //mappa Id-coordinate vertici
+    vector<array<unsigned int, 2>> TracesFractures = {};                   //mappa Id-Id fratture generanti
+    vector<vector<unsigned int>> FractureTraces = {};                      //mappa Id frattura-Id tracce
     map<array<unsigned int, 2>, bool> Tips = {};                               //mappa Id traccia/Id fratture-passante
     map<array<unsigned int, 2>, array<array<double,3>,2>> Retta = {};          //mappa Id traccia/Id fratture-Retta (P,V)
     map<array<unsigned int, 2>, array<unsigned int ,2>> LatiIntersecati = {};  //mappa Id traccia/Id fratture-Lati intersecati
 
-    map<unsigned int, vector<vector<array<double,3>>>> Sottopoligoni = {};             //mappa Id frattura/coordinate sottopoligoni
+    vector<vector<vector<array<double,3>>>> Sottopoligoni = {};                //mappa Id frattura/coordinate sottopoligoni
 };
 
 struct Piano
 {
     vector<unsigned int> PlaneId={};                                       //memorizza gli Id dei piani (coincidono con quelli delle fratture)
-    map<unsigned int, array<double, 4>> Plane = {};                        //mappa Id-coefficienti del piano
+    vector<array<double, 4>> Plane = {};                                   //mappa Id-coefficienti del piano
 };
 
 struct PolygonalMesh

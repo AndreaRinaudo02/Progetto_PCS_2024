@@ -17,7 +17,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR10_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR82_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -27,6 +27,7 @@ bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 bool ImportFractures(const string &file_name, DFN& dfn, Piano& Plane)
 
 {
+    Plane.Plane.resize(dfn.NumberFractures);
     ifstream file;
     file.open(file_name);     //apre il file
 
@@ -50,6 +51,7 @@ bool ImportFractures(const string &file_name, DFN& dfn, Piano& Plane)
 
     dfn.FractureCoordinates.resize(m);     //riscala i vettori
     dfn.FractureId.resize(m);
+    dfn.FracturesVertices.resize(m);
     Plane.PlaneId.resize(m);
 
     getline(file, riga);       //scarta riga
@@ -243,6 +245,12 @@ void StampaTracce(const string& file_name, DFN& dfn)
     ofstream file;
     file.open(file_name);     //apre il file
 
+    if (!file.is_open())
+    {
+        cerr << "Impossibile aprire file di output" << endl;
+        return;
+    }
+
     file << "# Number of Traces" << endl;      //inizio stampa prima parte
     file <<"   "<< dfn.NumberTraces << endl;
 
@@ -262,16 +270,20 @@ void StampaTracce(const string& file_name, DFN& dfn)
 
         file << "--------------------------------------------------------" << endl;
 
-        file << endl;
 
-        for (auto pair : dfn.FractureTraces)        //inizio stampa seconda parte
+        for (unsigned int n : dfn.FractureId)        //inizio stampa seconda parte
         {
-            file << "# FractureId; NumTraces" << endl;
-            file << "   " << pair.first << "; " << pair.second.size() << endl;
-            file << "# TraceId; Tips; Length" << endl;
+            if(dfn.FractureTraces[n].size() > 0)
+            {
+                file << endl;
+                file << "# FractureId; NumTraces" << endl;
+                file << "   " << n << "; " << dfn.FractureTraces[n].size() << endl;
+                file << "# TraceId; Tips; Length" << endl;
+            }
 
-            vector<unsigned int> tracce = pair.second;               //occorre ordinare le tracce e misurarne la lunghezza
-            map<unsigned int, double> lunghezza = {};                //mappa traccia-lunghezza
+            vector<unsigned int> tracce = dfn.FractureTraces[n];               //occorre ordinare le tracce e misurarne la lunghezza
+            vector<double> lunghezza = {};                                     //mappa traccia-lunghezza
+            lunghezza.resize(tracce.size());
 
             for (unsigned int k = 0; k < tracce.size(); k = k+1)
             {
@@ -289,14 +301,14 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 unsigned int prossimo = tracce[k];           //algoritmo di sorting che ordina le tracce in base a Tips
                 int j = k;
 
-                array<unsigned int, 2> coppia1 = {prossimo,pair.first};
-                array<unsigned int, 2> coppia2 = {tracce[j-1],pair.first};
+                array<unsigned int, 2> coppia1 = {prossimo, n};
+                array<unsigned int, 2> coppia2 = {tracce[j-1], n};
 
                 while ((j > 0) && dfn.Tips[coppia1] < dfn.Tips[coppia2])
                 {
                     tracce[j] = tracce[j-1];
                     j = j-1;
-                    coppia2 = {tracce[j-1], pair.first};
+                    coppia2 = {tracce[j-1], n};
                 }
                 tracce[j] = prossimo;
             }
@@ -306,26 +318,25 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 unsigned int prossimo = tracce[k];
                 int j = k;
 
-                array<unsigned int, 2> coppia1 = {prossimo,pair.first};
-                array<unsigned int, 2> coppia2 = {tracce[j-1],pair.first};
+                array<unsigned int, 2> coppia1 = {prossimo, n};
+                array<unsigned int, 2> coppia2 = {tracce[j-1], n};
 
                 while ((j > 0) && lunghezza[tracce[j-1]] < lunghezza[prossimo] && dfn.Tips[coppia1] == dfn.Tips[coppia2])
                 {
                     tracce[j] = tracce[j-1];
                     j = j-1;
-                    coppia2 = {tracce[j-1], pair.first};
+                    coppia2 = {tracce[j-1], n};
                 }
                 tracce[j] = prossimo;
             }
 
-            dfn.FractureTraces[pair.first] = tracce;     //memorizza le tracce in ordine
+            dfn.FractureTraces[n] = tracce;              //memorizza le tracce in ordine
 
             for(unsigned int Id_traccia : tracce)        //stampa seconda parte
             {
-                array<unsigned int, 2> coppia = {Id_traccia,pair.first};
+                array<unsigned int, 2> coppia = {Id_traccia, n};
                 file << "   " << Id_traccia << "; " << dfn.Tips[coppia] << "; " << lunghezza[Id_traccia] << endl;
             }
-            file << endl;
         }
 
         file.close();
@@ -408,6 +419,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 {
     unsigned int Id_traccia = 0;
     double prod_scal;
+    dfn.FractureTraces.resize(dfn.NumberFractures);
 
     for(const auto& pair : Retta)     //itera le coppie (e le rispettive rette di intersezione)
     {
@@ -473,7 +485,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
                 dfn.FractureTraces[pair.first[1]].push_back(Id_traccia);
 
-                dfn.TracesFractures[Id_traccia] = pair.first;               //associa alla traccia la coppia di fratture che la genera
+                dfn.TracesFractures.push_back(pair.first);               //associa alla traccia la coppia di fratture che la genera
 
                 double tol = 1e-15;        //tolleranza
 
@@ -521,7 +533,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 array<array<double, 3>, 2> estremi = {estremo1, estremo2};
 
 
-                dfn.TracesVertices[Id_traccia] = estremi;       //associa alla traccia i suoi estremi
+                dfn.TracesVertices.push_back(estremi);       //associa alla traccia i suoi estremi
 
 
                 dfn.TracesId.push_back(Id_traccia);        //memorizza l'Id della traccia
@@ -539,10 +551,12 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 
 void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 {
+    dfn.Sottopoligoni.resize(dfn.NumberFractures);
     for (const unsigned int Id_frattura : dfn.FractureId)       //ciclo sulle fratture
     {
         bool it=true;                                           //rimane true solo al primo passaggio (la prima traccia presa in considerazione)
-        vector<vector<array<double, 3>>> Sottopoligoni = {};    //memorizza i sottopoligoni in cui viene divisa la frattura
+        vector<vector<array<double, 3>>> Sottopoligoni = {dfn.FractureCoordinates[Id_frattura]};    //memorizza i sottopoligoni in cui viene divisa la frattura
+        vector<vector<array<double, 3>>> Sottopoligoni2 = {};
 
         for (const unsigned int Id_traccia : dfn.FractureTraces[Id_frattura])     //itera sulle tracce
         {
@@ -682,8 +696,10 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 
                 }
 
-                Sottopoligoni.push_back(Sotto1);
-                Sottopoligoni.push_back(Sotto2);
+                Sottopoligoni2.push_back(Sotto1);
+                Sottopoligoni2.push_back(Sotto2);
+
+                Sottopoligoni = Sottopoligoni2;
 
                 it=false;
 
@@ -996,12 +1012,11 @@ void StampaSottopoligoni(const string& file_name, DFN& dfn, PolygonalMesh& mesh)
     mesh.Cell2DId.resize(N);
     mesh.Cell2DEdges.resize(N);
     mesh.Cell2DVertices.resize(N);
-
     mesh.NumberCell0D.resize(N);
     mesh.NumberCell1D.resize(N);
     mesh.NumberCell2D.resize(N);
 
-    for (unsigned int Id_frattura : dfn.FractureId)
+    for (unsigned int Id_frattura : dfn.FractureId)       //ciclo sulle fratture
     {
         unsigned int Id_2D = 0;
         unsigned int Id_1D = 0;
@@ -1012,7 +1027,7 @@ void StampaSottopoligoni(const string& file_name, DFN& dfn, PolygonalMesh& mesh)
         vector<vector<unsigned int>> lati2D = {};
         vector<vector<unsigned int>> Vertici2D = {};
 
-        for (vector<array<double,3>>& sottopoligono : dfn.Sottopoligoni[Id_frattura])
+        for (vector<array<double,3>>& sottopoligono : dfn.Sottopoligoni[Id_frattura])      //ciclo sui sottopoligoni che compongono la frattura
         {
             mesh.Cell2DId[Id_frattura].push_back(Id_2D);
             unsigned int n = sottopoligono.size();
