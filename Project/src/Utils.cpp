@@ -5,9 +5,10 @@
 #include <sstream>
 #include <cmath>
 #include <algorithm>
+#include <Eigen/Eigen>
+#include <map>
 #include "Utils.hpp"
 #include "DFN.hpp"
-#include <Eigen/Dense>
 
 using namespace std;
 using namespace Eigen;
@@ -17,7 +18,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR82_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -27,7 +28,6 @@ bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 bool ImportFractures(const string &file_name, DFN& dfn, Piano& Plane)
 
 {
-    Plane.Plane.resize(dfn.NumberFractures);
     ifstream file;
     file.open(file_name);     //apre il file
 
@@ -88,12 +88,10 @@ bool ImportFractures(const string &file_name, DFN& dfn, Piano& Plane)
         }
 
         dfn.FracturesVertices[dfn.FractureId[i]] = dfn.FractureCoordinates[i];    //chiave: Id, valore: vettore di array con le coordinate del vertice
-
         array<double,4> Coefficienti_piano = {};
         ParametriPiano(dfn.FractureCoordinates[i], Coefficienti_piano);           //calcola i coefficienti del piano contenente la frattura
-        Plane.Plane[dfn.FractureId[i]] = Coefficienti_piano;                      //chiave: Id, valore: array (dimensione 4) con i parametri del piano in ordine (a, b, c, d)
+        Plane.Plane.push_back(Coefficienti_piano);                                //chiave: Id, valore: array (dimensione 4) con i parametri del piano in ordine (a, b, c, d)
     }
-
 
     file.close();     //chiude il file
 
@@ -155,7 +153,6 @@ void Calcola_tracce(DFN& dfn, Piano& piano)
     Fratture_vicine(dfn, coppie_vicine);
 
     //2 - 3
-
     map<array<unsigned int, 2>, array<array<double, 3>, 2>> Retta={};   //memorizza i dati della retta di interezione in uma mappa coppia-Punto/direttrice
     RettaIntersezione(piano, coppie_vicine, Retta);
 
@@ -456,7 +453,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
                 {
                     array<unsigned int, 2> duo = {Id_traccia, Id};
                     dfn.Retta[duo] = pair.second;        //è uno strumentopolo che ci servirà più tardi
-                    dfn.LatiIntersecati[duo][i] = j;
+                    dfn.LatiIntersecati[duo].push_back(j);
 
                     array<double, 3> d = {lato[0][0]-lato[1][0], lato[0][1]-lato[1][1], lato[0][2]-lato[1][2]};
 
@@ -549,7 +546,7 @@ void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Re
 }
 
 
-void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
+void TagliaTracce(DFN& dfn, vector<PolygonalMesh>& Mesh)
 {
     dfn.Sottopoligoni.resize(dfn.NumberFractures);
     for (const unsigned int Id_frattura : dfn.FractureId)       //ciclo sulle fratture
@@ -565,13 +562,12 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
             if (it==true)
             {
                 vector<array<double,3>> Vertici = dfn.FractureCoordinates[Id_frattura];
-                array<unsigned int, 2> J = dfn.LatiIntersecati[Copp];      //serve per non ciclare sui lati
+                vector<unsigned int> J = dfn.LatiIntersecati[Copp];      //serve per non ciclare sui lati
                 array<unsigned int, 2> J1 = {};         //memorizza gli estremi del primo lato intersecato
                 array<unsigned int, 2> J2 = {};         //memorizza gli estremi del secondo lato intersecato
 
                 vector<array<double,3>> Sotto1 = {};    //memorizzano i due sottopoligoni
                 vector<array<double,3>> Sotto2 = {};
-
                 if(J[1] == Vertici.size()-1)
                 {
                     J1[0] = J[0];
@@ -601,7 +597,7 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                             {
                                 Sotto1.push_back(Vertici[i]);
                             }
-                            else if ( i == J[0])
+                            else if ( i == J[1])
                             {
                                 Sotto1.push_back(dfn.TracesVertices[Id_traccia][0]);
                                 Sotto1.push_back(dfn.TracesVertices[Id_traccia][1]);
@@ -640,6 +636,11 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 
                     double t = X[0];
 
+                    if(abs(t) < 1.0e-10)
+                    {
+                        t = 0;
+                    }
+
                     array<double,3> estremo1 = {};
 
                     estremo1[0] = PV[0][0] + t*PV[1][0];
@@ -656,6 +657,11 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 
                     t = Y[0];
 
+                    if(abs(t) < 1.0e-10)
+                    {
+                        t = 0;
+                    }
+
                     array<double,3> estremo2 = {};
 
                     estremo2[0] = PV[0][0] + t*PV[1][0];
@@ -670,7 +676,7 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                             {
                                 Sotto1.push_back(Vertici[i]);
                             }
-                            else if ( i == J[0])
+                            else if ( i == J[1])
                             {
                                 Sotto1.push_back(estremo1);
                                 Sotto1.push_back(estremo2);
@@ -759,6 +765,11 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 
                                 double t = X[0];
 
+                                if(abs(t) < 1.0e-10)
+                                {
+                                    t = 0;
+                                }
+
                                 if(primo == false)  //significa che ha trovato almeno un'interseione (sono per forza due)
                                 {
                                     estremo1[0] = PV[0][0] + t*PV[1][0];
@@ -788,7 +799,7 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                                     {
                                         Sotto1.push_back(sottopoligono[i]);
                                     }
-                                    else if ( i == J[0])
+                                    else if ( i == J[1])
                                     {
                                         Sotto1.push_back(estremo1);
                                         Sotto1.push_back(estremo2);
@@ -868,7 +879,7 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 
                                 bool test = true;
 
-                                if (std::abs(sum - 1.0) > 1e-10)
+                                if (abs(sum - 1.0) > 1e-10)
                                 {
                                     interna = false;
                                     test = false;
@@ -929,6 +940,11 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
 
                                     double t = X[0];
 
+                                    if(abs(t) < 1.0e-10)
+                                    {
+                                        t = 0;
+                                    }
+
                                     if(primo == false)
                                     {
                                         estremo1[0] = PV[0][0] + t*PV[1][0];
@@ -957,7 +973,7 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
                                     {
                                         Sotto1.push_back(sottopoligono[i]);
                                     }
-                                    else if ( i == J[0])
+                                    else if ( i == J[1])
                                     {
                                         Sotto1.push_back(estremo1);
                                         Sotto1.push_back(estremo2);
@@ -997,114 +1013,126 @@ void TagliaTracce(DFN& dfn, PolygonalMesh& mesh)
         dfn.Sottopoligoni[Id_frattura] = Sottopoligoni;
     }
 
+    cout << "check tagliatracce" << endl;
     const string file_name = "results_2.txt";       //stampa su file
-    StampaSottopoligoni(file_name, dfn, mesh);
+    StampaSottopoligoni(file_name, dfn, Mesh);
 }
 
-void StampaSottopoligoni(const string& file_name, DFN& dfn, PolygonalMesh& mesh)
+void StampaSottopoligoni(const string& file_name, DFN& dfn, vector<PolygonalMesh>& Mesh)
 {
-    int N = dfn.NumberFractures;
-
-    mesh.Cell0DId.resize(N);
-    mesh.Cell0DCoordinates.resize(N);
-    mesh.Cell1DId.resize(N);
-    mesh.Cell1DVertices.resize(N);
-    mesh.Cell2DId.resize(N);
-    mesh.Cell2DEdges.resize(N);
-    mesh.Cell2DVertices.resize(N);
-    mesh.NumberCell0D.resize(N);
-    mesh.NumberCell1D.resize(N);
-    mesh.NumberCell2D.resize(N);
+    unsigned int Id_2D = 0;
+    unsigned int Id_1D = 0;
+    unsigned int Id_0D = 0;
+    map<array<double, 3>, unsigned int> mappa0D;
+    map<array<unsigned int, 2>, unsigned int> mappa1D;
 
     for (unsigned int Id_frattura : dfn.FractureId)       //ciclo sulle fratture
     {
-        unsigned int Id_2D = 0;
-        unsigned int Id_1D = 0;
-        unsigned int Id_0D = 0;
+        PolygonalMesh mesh;
 
-        vector<unsigned int> vertici0D = {};
-        vector<array<unsigned int, 2>> estremi1D = {};
-        vector<vector<unsigned int>> lati2D = {};
-        vector<vector<unsigned int>> Vertici2D = {};
-
-        for (vector<array<double,3>>& sottopoligono : dfn.Sottopoligoni[Id_frattura])      //ciclo sui sottopoligoni che compongono la frattura
+        for (vector<array<double, 3>>& sottopoligono : dfn.Sottopoligoni[Id_frattura])      //ciclo sui sottopoligoni che compongono la frattura
         {
-            mesh.Cell2DId[Id_frattura].push_back(Id_2D);
-            unsigned int n = sottopoligono.size();
-            unsigned int it = 1;
+            mesh.Cell2DId.push_back(Id_2D);
 
-            mesh.Cell0DCoordinates[Id_frattura] = sottopoligono;
             vector<unsigned int> vertici2D = {};
-            vector<unsigned int> vertici1D = {};
-            vector<unsigned int> lato2D = {};
+            vector<unsigned int> lati2D = {};
 
-            for (unsigned int m = 0; m < n ; m++)
+            unsigned int n = sottopoligono.size();
+
+            for (unsigned int m = 0; m <= n; m++)
             {
-                vertici2D.push_back(Id_0D);
-                vertici0D.push_back(Id_0D);
-
-                if(it < n)
+                if (m != n)
                 {
-                    vertici1D.push_back(Id_1D);
+                    if (mappa0D.count(sottopoligono[m]) == 0)
+                    {
+                        mappa0D[sottopoligono[m]] = Id_0D;
+                        mesh.Cell0DId.push_back(Id_0D);
+                        mesh.Cell0DCoordinates.push_back(sottopoligono[m]);
+                        Id_0D += 1;
+                    }
 
-                    array<unsigned int, 2> estremi = {};
-                    estremi[0] = Id_0D;
-                    estremi[1] = Id_0D+1;
-                    estremi1D.push_back(estremi);
-
-                    lato2D.push_back(Id_1D);
-
-                    Id_1D += 1;
+                    vertici2D.push_back(mappa0D[sottopoligono[m]]);
                 }
 
-                else
+                array<unsigned int, 2> lato = {};
+
+                if (m > 0 && m < n)
                 {
-                    vertici1D.push_back(Id_1D);
+                    lato[0] = min(mappa0D[sottopoligono[m]], mappa0D[sottopoligono[m - 1]]);
+                    lato[1] = max(mappa0D[sottopoligono[m]], mappa0D[sottopoligono[m - 1]]);
 
-                    array<unsigned int, 2> estremi = {};
-                    estremi[0] = Id_0D;
-                    estremi[1] = Id_0D+1-n;
-                    estremi1D.push_back(estremi);
+                    if (mappa1D.count(lato) == 0)
+                    {
+                        mappa1D[lato] = Id_1D;
+                        mesh.Cell1DId.push_back(Id_1D);
+                        mesh.Cell1DVertices.push_back(lato);
+                        Id_1D = Id_1D + 1;
+                    }
 
-                    lato2D.push_back(Id_1D);
-
-                    Id_1D += 1;
+                    lati2D.push_back(mappa1D[lato]);
                 }
 
-                it += 1;
-                Id_0D += 1;
+                else if (m == n)
+                {
+                    lato[0] = min(mappa0D[sottopoligono[0]], mappa0D[sottopoligono[m - 1]]);
+                    lato[1] = max(mappa0D[sottopoligono[0]], mappa0D[sottopoligono[m - 1]]);
+
+                    if (mappa1D.count(lato) == 0)
+                    {
+                        mappa1D[lato] = Id_1D;
+                        mesh.Cell1DId.push_back(Id_1D);
+                        mesh.Cell1DVertices.push_back(lato);
+                        Id_1D = Id_1D + 1;
+                    }
+
+                    lati2D.push_back(mappa1D[lato]);
+                }
+
             }
 
-            Vertici2D.push_back(vertici2D);
-            mesh.Cell1DId[Id_frattura] = vertici1D;
-            lati2D.push_back(lato2D);
+            mesh.Cell2DEdges.push_back(lati2D);
+            mesh.Cell2DVertices.push_back(vertici2D);
 
             Id_2D += 1;
         }
 
-        mesh.Cell2DVertices[Id_frattura] = Vertici2D;
-
-        mesh.Cell0DId[Id_frattura] = vertici0D;
-
-        mesh.Cell1DVertices[Id_frattura] = estremi1D;
-        mesh.Cell2DEdges[Id_frattura] = lati2D;
-
-        mesh.NumberCell0D[Id_frattura] = mesh.Cell0DId[Id_frattura].size();
-        mesh.NumberCell1D[Id_frattura] = mesh.Cell1DId[Id_frattura].size();
-        mesh.NumberCell2D[Id_frattura] = mesh.Cell2DId[Id_frattura].size();
+        mesh.NumberCell0D = mesh.Cell0DId.size();
+        mesh.NumberCell1D = mesh.Cell1DId.size();
+        mesh.NumberCell2D = mesh.Cell2DId.size();
+        Mesh[Id_frattura] = mesh;
     }
 
+    cout << "check numerazione celle" << endl;
     ofstream file;
     file.open(file_name);     //apre il file
 
     for (unsigned int Id : dfn.FractureId)
     {
-        file << "Frattura " << Id << "    Numero sottopoligoni: " << mesh.NumberCell2D[Id] << endl;
+        file << "ID frattura " << Id << "    Numero sottopoligoni: " << Mesh[Id].NumberCell2D << endl;
         file << endl;
 
-        for (unsigned int it = 0; it < mesh.NumberCell2D[Id]; it++)
+        for (unsigned int it = 0; it < Mesh[Id].Cell2DId.size(); it++)
         {
-            file <<"Id sottopoligono: " << mesh.Cell2DId[Id][it]<< endl;
+            file << "Id sottopoligono: " << Mesh[Id].Cell2DId[it] << endl;
+            file << endl;
+            file << "Id lati: ";
+
+            for (unsigned int lato : Mesh[Id].Cell2DEdges[it])
+            {
+                file << lato << " ";
+            }
+            file << endl;
+            file << endl;
+            file << "Id vertici: ";
+
+            for (unsigned int vertice : Mesh[Id].Cell2DVertices[it])
+                {
+                    file << vertice << " ";
+                }
+
+            file << endl;
+            file << endl;
+            file << endl;
         }
 
         file << endl;
@@ -1112,6 +1140,9 @@ void StampaSottopoligoni(const string& file_name, DFN& dfn, PolygonalMesh& mesh)
     }
 
     file.close();
+
+
 }
+
 
 }
