@@ -18,7 +18,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR362_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -267,6 +267,8 @@ void StampaTracce(const string& file_name, DFN& dfn)
 
         file << "--------------------------------------------------------" << endl;
 
+        vector<double> lunghezza = {};                  //mappa traccia-lunghezza
+        lunghezza.resize(dfn.NumberTraces);
 
         for (unsigned int n : dfn.FractureId)        //inizio stampa seconda parte
         {
@@ -279,21 +281,23 @@ void StampaTracce(const string& file_name, DFN& dfn)
             }
 
             vector<unsigned int> tracce = dfn.FractureTraces[n];               //occorre ordinare le tracce e misurarne la lunghezza
-            vector<double> lunghezza = {};                                     //mappa traccia-lunghezza
-            lunghezza.resize(tracce.size());
 
-            for (unsigned int k = 0; k < tracce.size(); k = k+1)
+
+            for (unsigned int k = 0; k < tracce.size(); k++)
             {
-                array<array<double, 3>,2> vertici = dfn.TracesVertices[tracce[k]];
+                if(lunghezza[tracce[k]] == 0)
+                {
+                    array<array<double, 3>,2> vertici = dfn.TracesVertices[tracce[k]];
 
-                double x = vertici[0][0] - vertici[1][0];
-                double y = vertici[0][1] - vertici[1][1];
-                double z = vertici[0][2] - vertici[1][2];
+                    double x = vertici[0][0] - vertici[1][0];
+                    double y = vertici[0][1] - vertici[1][1];
+                    double z = vertici[0][2] - vertici[1][2];
 
-                double distanza = sqrt(x*x + y*y +z*z);      //calcola la lunghezza in norma 2
+                    double distanza = sqrt(x*x + y*y +z*z);      //calcola la lunghezza in norma 2
 
-                lunghezza[tracce[k]] = distanza;
+                   lunghezza[tracce[k]] = distanza;
 
+                }
 
                 unsigned int prossimo = tracce[k];           //algoritmo di sorting che ordina le tracce in base a Tips
                 int j = k;
@@ -310,7 +314,7 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 tracce[j] = prossimo;
             }
 
-            for (unsigned int k = 0; k < tracce.size(); k = k+1)      //algoritmo di sorting che ordina le tracce, a parità di Tips, in base alla lunghezza
+            for (unsigned int k = 0; k < tracce.size(); k++)      //algoritmo di sorting che ordina le tracce, a parità di Tips, in base alla lunghezza
             {
                 unsigned int prossimo = tracce[k];
                 int j = k;
@@ -318,7 +322,7 @@ void StampaTracce(const string& file_name, DFN& dfn)
                 array<unsigned int, 2> coppia1 = {prossimo, n};
                 array<unsigned int, 2> coppia2 = {tracce[j-1], n};
 
-                while ((j > 0) && lunghezza[tracce[j-1]] < lunghezza[prossimo] && dfn.Tips[coppia1] == dfn.Tips[coppia2])
+                while (j > 0 && lunghezza[tracce[j-1]] < lunghezza[prossimo] && dfn.Tips[coppia1] == dfn.Tips[coppia2])
                 {
                     tracce[j] = tracce[j-1];
                     j = j-1;
@@ -1013,7 +1017,6 @@ void TagliaTracce(DFN& dfn, vector<PolygonalMesh>& Mesh)
         dfn.Sottopoligoni[Id_frattura] = Sottopoligoni;
     }
 
-    cout << "check tagliatracce" << endl;
     const string file_name = "results_2.txt";       //stampa su file
     StampaSottopoligoni(file_name, dfn, Mesh);
 }
@@ -1102,7 +1105,6 @@ void StampaSottopoligoni(const string& file_name, DFN& dfn, vector<PolygonalMesh
         Mesh[Id_frattura] = mesh;
     }
 
-    cout << "check numerazione celle" << endl;
     ofstream file;
     file.open(file_name);     //apre il file
 

@@ -22,7 +22,6 @@ int main()
         return 2;
     }
 
-    cout << "check main"  << endl;
     Mesh.resize(dfn.NumberFractures);
 
     TagliaTracce(dfn, Mesh);
