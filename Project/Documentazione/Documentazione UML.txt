@@ -1,0 +1,126 @@
+@startuml
+
+package DFN_Library <<Node>> #line:Grey;line.bold;back:White
+{
+
+struct DFN << (D, Yellow) >> #line:Navy;line.bold;back:aliceblue
+{
+
++ NumberFractures : unsigned int 
++ FractureId : vector<unsigned int>
++ FractureCoordinates : vector<vector<array<double, 3>>>
++ FractureVertices : vector<vector<array<double, 3>>>
+
++ NumberTraces : unsigned int NumberTraces                              
++ TracesId : vector<unsigned int>
++ TracesVertices : vector<array<array<double, 3>,2>> 
++ TracesFractures : vector<array<unsigned int, 2>> 
++ FractureTraces : vector<vector<unsigned int>>
++ Tips : map<array<unsigned int, 2>, bool>
++ Retta : map<array<unsigned int, 2>, array<array<double,3>,2>>
++ LatiIntersecati : map<array<unsigned int, 2>, vector<unsigned int>>
+
++  Sottopoligoni : vector<vector<vector<array<double,3>>>>
+
+
+' fine struct Fractures
+}
+
+
+struct Piano << (P, Wheat) >> #line:Navy;line.bold;back:aliceblue
+{
+
++ PlaneId : vector<unsigned int> 
++ Plane : vector<array<double, 4>> 
+
+
+' fine struct Piano
+} 
+
+struct PolygonalMesh  << (M, Coral) >> #line:Navy;line.bold;back:aliceblue
+{
+
++ NumberCell0D  : unsigned int                             
++  Cell0DId : vector<unsigned int>                       
++  Cell0DCoordinates : map<unsigned int, array<double, 3>>
+
++ NumberCell1D : unsigned int 
++ Cell1DId : vector<unsigned int>                      
++ Cell1DVertices : map<unsigned int, array<unsigned int, 2>>
+
++ NumberCell2D : unsigned int 
++ Cell2DId : vector<unsigned int> 
++ Cell2DVertices : vector<vector<unsigned int>> 
++ Cell2DEdges : vector<vector<unsigned int>> 
+
+' fine struct PolygonalMesh
+} 
+
+
+
+struct Funzioni_DFN << (F, Orange) >> #line:Orange;line.dashed;back:snow
+{
+
++bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
++bool ImportFractures(const string& file_name, DFN& dfn, Piano& Plane)
++void ParametriPiano(vector<array<double,3>> parametri, array<double, 4>& Coefficienti_piano)
++void Calcola_tracce(DFN& dfn, Piano& Plane)
++void Fratture_vicine(DFN& dfn, vector<array<unsigned int, 2>>& coppie_vicine)
++void Crea_bolle(DFN& dfn, vector<array<double , 4>>& bolle)
++void StampaTracce(const string& file_name, DFN& dfn)
++void RettaIntersezione(Piano &Plane, vector<array<unsigned int, 2>>& coppie_vicine, map<array<unsigned int, 2>, array<array<double, 3>, 2>>& Retta)
++void IntersezioneLati(map<array<unsigned int, 2>,array<array<double, 3>, 2>>& Retta, DFN& dfn)
+
+' fine struct Funzioni_DFN
+}
+
+struct Funzioni_Mesh  << (F, OrangeRed) >> #line:OrangeRed;line.dashed;back:snow
+{
+
++void TagliaTracce(DFN& dfn, vector<PolygonalMesh>& Mesh)
++void StampaSottopoligoni(const string& file_name, DFN& dfn, vector<PolygonalMesh>& Mesh)
+
+' fine struct Funzioni_Mesh
+}
+
+
+struct TEST << (T, Red) >> #line:DarkRed;line.dashed;back:snow
+{
+
+..TestFile..
+
++ FileValido
++LetturaCorrettaDelFile
++ FileNonPresente
+
+..TestFratture..
+
++ DueFratture(TracciaPassante)
++ DueFratture(TracciaPassantePerUnaSolaFrattura)
++ NessunaTraccia
+
+..TestTracce..
+
++ CalcoloCorrettoDelleTracce
+
+' fine TEST
+}
+
+
+DFN -right-> TEST
+Piano -up-> TEST
+DFN -right[#RoyalBlue] Piano
+DFN -left[#RoyalBlue] PolygonalMesh
+Piano -down-> Funzioni_DFN
+DFN -down-> Funzioni_DFN
+PolygonalMesh -down-> Funzioni_Mesh
+DFN -down-> Funzioni_Mesh
+
+' fine namespace DFNLibrary
+} 
+
+
+@enduml 
+
+
+
