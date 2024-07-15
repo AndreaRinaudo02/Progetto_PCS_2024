@@ -1,0 +1,31 @@
+[==========] Running 11 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 11 tests from ImportFractures
+[ RUN      ] ImportFractures.ValidFile
+[       OK ] ImportFractures.ValidFile (161 ms)
+[ RUN      ] ImportFractures.NumberTraces
+[       OK ] ImportFractures.NumberTraces (1 ms)
+[ RUN      ] ImportFractures.NumberFractures
+[       OK ] ImportFractures.NumberFractures (1 ms)
+[ RUN      ] ImportFractures.Tips
+[       OK ] ImportFractures.Tips (1 ms)
+[ RUN      ] ImportFractures.Plane
+[       OK ] ImportFractures.Plane (1 ms)
+[ RUN      ] ImportFractures.Retta
+[       OK ] ImportFractures.Retta (1 ms)
+[ RUN      ] ImportFractures.Tips2
+[       OK ] ImportFractures.Tips2 (1 ms)
+[ RUN      ] ImportFractures.ValidFile2
+[       OK ] ImportFractures.ValidFile2 (7 ms)
+[ RUN      ] ImportFractures.NumberTraces2
+[       OK ] ImportFractures.NumberTraces2 (6 ms)
+[ RUN      ] ImportFractures.NumberFractures2
+[       OK ] ImportFractures.NumberFractures2 (6 ms)
+[ RUN      ] ImportFractures.FileDoesNotExist
+Error: Unable to open file Google_test/non_existing_file.txt
+[       OK ] ImportFractures.FileDoesNotExist (1 ms)
+[----------] 11 tests from ImportFractures (191 ms total)
+
+[----------] Global test environment tear-down
+[==========] 11 tests from 1 test suite ran. (191 ms total)
+[  PASSED  ] 11 tests.

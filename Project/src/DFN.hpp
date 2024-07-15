@@ -7,7 +7,6 @@
 #include <list>
 #include <Eigen/Eigen>
 #include <map>
-#include "Utils.hpp"
 
 using namespace std;
 using namespace Eigen;

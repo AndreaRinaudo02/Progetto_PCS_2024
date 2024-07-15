@@ -18,7 +18,7 @@ namespace DFN_Library
 
 bool ImportDFN(const string& file_path, DFN& dfn, Piano& Plane)
 {
-    if(!ImportFractures(file_path + "/FR362_data.txt", dfn, Plane))
+    if(!ImportFractures(file_path + "/FR3_data.txt", dfn, Plane))
     {
         return false;
     }
@@ -1110,7 +1110,8 @@ void StampaSottopoligoni(const string& file_name, DFN& dfn, vector<PolygonalMesh
 
     for (unsigned int Id : dfn.FractureId)
     {
-        file << "ID frattura " << Id << "    Numero sottopoligoni: " << Mesh[Id].NumberCell2D << endl;
+        cout<< Mesh[Id].Cell1DVertices.size() << endl;
+        file << "ID frattura: " << Id << "    Numero sottopoligoni: " << Mesh[Id].NumberCell2D << endl;
         file << endl;
 
         for (unsigned int it = 0; it < Mesh[Id].Cell2DId.size(); it++)
@@ -1125,15 +1126,30 @@ void StampaSottopoligoni(const string& file_name, DFN& dfn, vector<PolygonalMesh
             }
             file << endl;
             file << endl;
+
+            for (unsigned int lato : Mesh[Id].Cell2DEdges[it])
+            {
+                file <<"Id vertici lato " << lato << ": " << Mesh[Id].Cell1DVertices[lato][0] << " " << Mesh[Id].Cell1DVertices[lato][1] << endl;
+            }
+
+            file << endl;
             file << "Id vertici: ";
 
             for (unsigned int vertice : Mesh[Id].Cell2DVertices[it])
-                {
-                    file << vertice << " ";
-                }
+            {
+                file << vertice << " ";
+            }
 
             file << endl;
             file << endl;
+
+            for (unsigned int vertice : Mesh[Id].Cell2DVertices[it])
+            {
+                file << "Coordinate vertice " << vertice << ":" << endl;
+                file << "X; Y; Z" << endl;
+                file << Mesh[Id].Cell0DCoordinates[vertice][0] << "; " << Mesh[Id].Cell0DCoordinates[vertice][1] << "; " << Mesh[Id].Cell0DCoordinates[vertice][2] << endl;
+            }
+
             file << endl;
         }
 
