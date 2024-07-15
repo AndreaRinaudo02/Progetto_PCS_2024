@@ -52,11 +52,21 @@ list(APPEND DFN_SOURCES ${DFN_sources})
 list(APPEND DFN_HEADERS ${DFN_headers})
 list(APPEND DFN_INCLUDE ${DFN_includes})
 # Create executable
+
+################################################################################
+add_subdirectory(Google_test)
+
+
+list(APPEND TEST_SOURCES ${TEST_sources})
+list(APPEND TEST_INCLUDE ${TEST_includes})
+# Create executable
 ################################################################################
 add_executable(${PROJECT_NAME}
 	main.cpp
 	${DFN_SOURCES}
-    ${DFN_HEADERS})
+        ${DFN_HEADERS}
+        ${TEST_SOURCES})
+
 
 target_link_libraries(${PROJECT_NAME} ${DFN_LINKED_LIBRARIES})
 target_include_directories(${PROJECT_NAME} PRIVATE ${DFN_INCLUDE})

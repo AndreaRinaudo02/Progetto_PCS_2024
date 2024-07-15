@@ -1,0 +1,16 @@
+# Number of Traces
+   1
+# TraceId; FractureId1; FractureId2; X1; Y1; Z1; X2; Y2; Z2
+  0; 360; 361; 0; 0; 0; 0; 100; 0
+
+--------------------------------------------------------
+
+# FractureId; NumTraces
+   360; 1
+# TraceId; Tips; Length
+   0; 0; 100
+
+# FractureId; NumTraces
+   361; 1
+# TraceId; Tips; Length
+   0; 0; 100
