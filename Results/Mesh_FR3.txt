@@ -1,0 +1,180 @@
+ID frattura: 0    Numero sottopoligoni: 3
+
+Id sottopoligono: 0
+
+Id lati: 0 1 2 3 
+
+Id vertici lato 0: 0; 1
+Id vertici lato 1: 1; 2
+Id vertici lato 2: 2; 3
+Id vertici lato 3: 0; 3
+
+Id vertici: 0 1 2 3 
+
+Coordinate vertice 0:
+X; Y; Z
+0; 0; 0
+Coordinate vertice 1:
+X; Y; Z
+0.8; 0; 0
+Coordinate vertice 2:
+X; Y; Z
+0.8; 1; 0
+Coordinate vertice 3:
+X; Y; Z
+0; 1; 0
+
+Id sottopoligono: 1
+
+Id lati: 4 5 6 7 
+
+Id vertici lato 4: 2; 4
+Id vertici lato 5: 4; 5
+Id vertici lato 6: 5; 6
+Id vertici lato 7: 2; 6
+
+Id vertici: 2 4 5 6 
+
+Coordinate vertice 2:
+X; Y; Z
+0.8; 1; 0
+Coordinate vertice 4:
+X; Y; Z
+0.8; 0.5; 0
+Coordinate vertice 5:
+X; Y; Z
+1; 0.5; 0
+Coordinate vertice 6:
+X; Y; Z
+1; 1; 0
+
+Id sottopoligono: 2
+
+Id lati: 5 8 9 10 
+
+Id vertici lato 5: 4; 5
+Id vertici lato 8: 1; 4
+Id vertici lato 9: 1; 7
+Id vertici lato 10: 5; 7
+
+Id vertici: 5 4 1 7 
+
+Coordinate vertice 5:
+X; Y; Z
+1; 0.5; 0
+Coordinate vertice 4:
+X; Y; Z
+0.8; 0.5; 0
+Coordinate vertice 1:
+X; Y; Z
+0.8; 0; 0
+Coordinate vertice 7:
+X; Y; Z
+1; 0; 0
+
+
+
+ID frattura: 1    Numero sottopoligoni: 2
+
+Id sottopoligono: 3
+
+Id lati: 11 1 12 13 
+
+Id vertici lato 11: 1; 8
+Id vertici lato 1: 1; 2
+Id vertici lato 12: 2; 9
+Id vertici lato 13: 8; 9
+
+Id vertici: 8 1 2 9 
+
+Coordinate vertice 8:
+X; Y; Z
+0.8; 0; -0.1
+Coordinate vertice 1:
+X; Y; Z
+0.8; 0; 0
+Coordinate vertice 2:
+X; Y; Z
+0.8; 1; 0
+Coordinate vertice 9:
+X; Y; Z
+0.8; 1; -0.1
+
+Id sottopoligono: 4
+
+Id lati: 1 14 15 16 
+
+Id vertici lato 1: 1; 2
+Id vertici lato 14: 1; 10
+Id vertici lato 15: 10; 11
+Id vertici lato 16: 2; 11
+
+Id vertici: 2 1 10 11 
+
+Coordinate vertice 2:
+X; Y; Z
+0.8; 1; 0
+Coordinate vertice 1:
+X; Y; Z
+0.8; 0; 0
+Coordinate vertice 10:
+X; Y; Z
+0.8; 0; 0.3
+Coordinate vertice 11:
+X; Y; Z
+0.8; 1; 0.3
+
+
+
+ID frattura: 2    Numero sottopoligoni: 2
+
+Id sottopoligono: 5
+
+Id lati: 17 18 19 20 
+
+Id vertici lato 17: 12; 13
+Id vertici lato 18: 13; 14
+Id vertici lato 19: 14; 15
+Id vertici lato 20: 12; 15
+
+Id vertici: 12 13 14 15 
+
+Coordinate vertice 12:
+X; Y; Z
+-0.237778; 0.5; -0.34444
+Coordinate vertice 13:
+X; Y; Z
+0.316184; 0.5; -0.34444
+Coordinate vertice 14:
+X; Y; Z
+0.316184; 0.5; 0
+Coordinate vertice 15:
+X; Y; Z
+-0.237778; 0.5; 0
+
+Id sottopoligono: 6
+
+Id lati: 19 21 22 23 
+
+Id vertici lato 19: 14; 15
+Id vertici lato 21: 14; 16
+Id vertici lato 22: 16; 17
+Id vertici lato 23: 15; 17
+
+Id vertici: 15 14 16 17 
+
+Coordinate vertice 15:
+X; Y; Z
+-0.237778; 0.5; 0
+Coordinate vertice 14:
+X; Y; Z
+0.316184; 0.5; 0
+Coordinate vertice 16:
+X; Y; Z
+0.316184; 0.5; 0.452839
+Coordinate vertice 17:
+X; Y; Z
+-0.237778; 0.5; 0.452839
+
+
+

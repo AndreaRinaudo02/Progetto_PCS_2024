@@ -41,18 +41,18 @@ struct Piano
 
 struct PolygonalMesh
 {
-    unsigned int NumberCell0D = {};                               // Numero di celle 0D
-    vector<unsigned int> Cell0DId = {};                           // ID delle celle 0D
-    vector<array<double, 3>> Cell0DCoordinates = {};              // Coordinate delle celle 0D
+    unsigned int NumberCell0D = {};                                // Numero di celle 0D
+    vector<unsigned int> Cell0DId = {};                            // ID delle celle 0D
+    map<unsigned int, array<double, 3>> Cell0DCoordinates;         // Coordinate delle celle 0D
 
-    unsigned int NumberCell1D = {};                               // Numero di celle 1D
-    vector<unsigned int> Cell1DId = {};                           // ID delle celle 1D
-    vector<array<unsigned int, 2>> Cell1DVertices = {};           // Due indici per rappresentare l'origine e la fine dello spigolo
+    unsigned int NumberCell1D = {};                                // Numero di celle 1D
+    vector<unsigned int> Cell1DId = {};                            // ID delle celle 1D
+    map<unsigned int, array<unsigned int, 2>> Cell1DVertices;      // Due indici per rappresentare l'origine e la fine dello spigolo
 
-    unsigned int NumberCell2D = {};                               // Numero di celle 2D
-    vector<unsigned int> Cell2DId = {};                           // ID delle celle 2D
-    vector<vector<unsigned int>> Cell2DVertices = {};             // Indici dei vertici delle celle 2D
-    vector<vector<unsigned int>> Cell2DEdges = {};                // Indici degli spigoli delle celle 2D
+    unsigned int NumberCell2D = {};                                // Numero di celle 2D
+    vector<unsigned int> Cell2DId = {};                            // ID delle celle 2D
+    vector<vector<unsigned int>> Cell2DVertices = {};              // Indici dei vertici delle celle 2D
+    vector<vector<unsigned int>> Cell2DEdges = {};                 // Indici degli spigoli delle celle 2D
 };
 
 }
